@@ -1,8 +1,4 @@
-﻿using HelpersCommon.Logger;
-using HelpersCommon.PrimitivesExtensions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
-using System.IO;
+﻿using HelpersCommon.PrimitivesExtensions;
 
 namespace HelpersCommon.FiltersAndAttributes
 {
@@ -11,7 +7,7 @@ namespace HelpersCommon.FiltersAndAttributes
         /// <summary>
         /// Replace {{uitoken}} in index.html to AnonymKey from settings
         /// </summary>
-        public static void UISetAnonymKey(this IWebHostEnvironment host, IConfiguration config, ILogger logger)
+        public static void UISetAnonymKey(this IWebHostEnvironment host, IConfiguration config, HelpersCommon.Logger.ILogger logger)
         {
             if (host.WebRootPath is null)
                 return; // Client ui not builded 
