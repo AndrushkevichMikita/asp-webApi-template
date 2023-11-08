@@ -18,7 +18,6 @@ using System.Text;
 try
 {
     var builder = WebApplication.CreateBuilder(args);
-
     builder.WebHost.ConfigureKestrel(x =>
     {
         // WARN: this options works only if run on Linux or *.exe. If you run on IIS see web.config
@@ -34,6 +33,7 @@ try
     builder.Services.AddSingleton<HelpersCommon.Logger.ILogger, Logger>();
     builder.Services.Configure<MvcOptions>(x => x.Conventions.Add(new ModelStateValidatorConvension()));
     builder.Services.LimitFormBodySize(Config.MaxRequestSizeBytes);
+    builder.Services.AddHealthChecks();
 
     // Add services to the container.
     builder.Services.AddDbContext<ApplicationDbContext>(x => x.UseSqlServer(Config.DefaultConnStr));
@@ -41,6 +41,12 @@ try
 #if DEBUG
     builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 #endif
+
+    builder.Services.AddResponseCompression(options =>
+    {
+        // it's risky for some attacks: https://docs.microsoft.com/en-us/aspnet/core/performance/response-compression?view=aspnetcore-3.0#compression-with-secure-protocol
+        options.EnableForHttps = false;
+    });
 
     builder.Services.AddSwaggerGen(c =>
     {
