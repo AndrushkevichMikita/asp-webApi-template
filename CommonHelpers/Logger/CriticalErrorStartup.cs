@@ -4,8 +4,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using System;
-using System.Linq;
 using System.Text;
 
 namespace HelpersCommon.Logger
@@ -36,17 +34,25 @@ namespace HelpersCommon.Logger
 
         public static void Run(Exception ex)
         {
-            Logger.ErrorCriticalSync("Error during SetupHost", ex);
-            Host.CreateDefaultBuilder()
-                .ConfigureAppConfiguration(builder =>
-                {
-                    builder.Sources.Clear();
-                    builder.AddConfiguration(new ConfigurationBuilder().Build());
-                })
-                .ConfigureWebHostDefaults(webBuilder =>
-                {
-                    webBuilder.UseStartup<CriticalErrorStartup>();
-                }).Build().Start();
+            try
+            {
+
+                Logger.ErrorCriticalSync("Error during SetupHost", ex);
+                Host.CreateDefaultBuilder()
+                    .ConfigureAppConfiguration(builder =>
+                    {
+                        builder.Sources.Clear();
+                        builder.AddConfiguration(new ConfigurationBuilder().Build());
+                    })
+                    .ConfigureWebHostDefaults(webBuilder =>
+                    {
+                        webBuilder.UseStartup<CriticalErrorStartup>();
+                    }).Build().Start();
+            }
+            catch (Exception)
+            {
+
+            }
         }
     }
 }

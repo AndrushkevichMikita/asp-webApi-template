@@ -1,4 +1,4 @@
-using asp_webApi_template.Data;
+using asp_web_api_template.Data;
 using FS.Shared.Settings;
 using HelpersCommon.ControllerExtensions;
 using HelpersCommon.ExceptionHandler;
@@ -27,10 +27,10 @@ try
     // applying appsettings
     builder.Configuration.ApplyConfiguration();
 
-    builder.Services.AddScoped<SecureAllowAnonymousAttribute>();
     builder.Services.AddScoped<DiagAuthorizeAttribute>();
-    builder.Services.AddScoped<IAuthorizationHandler, MinPermissionHandler>();
+    builder.Services.AddScoped<SecureAllowAnonymousAttribute>();
     builder.Services.AddSingleton<HelpersCommon.Logger.ILogger, Logger>();
+    builder.Services.AddScoped<IAuthorizationHandler, MinPermissionHandler>();
     builder.Services.Configure<MvcOptions>(x => x.Conventions.Add(new ModelStateValidatorConvension()));
     builder.Services.LimitFormBodySize(Config.MaxRequestSizeBytes);
     builder.Services.AddHealthChecks();
@@ -197,10 +197,20 @@ try
         }
         //endpoints.MapControllers().RequireAuthorization(new AuthorizeAttribute()).RequireAuthorization("Lock");
     });
-
     app.Run();
 }
 catch (Exception ex)
 {
-    CriticalErrorStartup.Run(ex);
+    var builder = WebApplication.CreateBuilder(args);
+    builder.Services.AddSingleton<HelpersCommon.Logger.ILogger, Logger>();
+
+    var app = builder.Build();
+    Logger.ErrorCriticalSync("Error during SetupHost", ex);
+    app.Run(async (context) =>
+    {
+        var str = new StringBuilder();
+        Logger.ErrorsInMemory.Select(item => item).Reverse().ToList().ForEach(c => str.AppendLine(c.Message));
+        await context.Response.WriteAsync(str.ToString());
+    });
+    app.Run();
 }

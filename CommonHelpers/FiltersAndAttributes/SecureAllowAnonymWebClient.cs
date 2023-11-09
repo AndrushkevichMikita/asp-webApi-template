@@ -1,4 +1,6 @@
 ﻿using HelpersCommon.PrimitivesExtensions;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
 
 namespace HelpersCommon.FiltersAndAttributes
 {

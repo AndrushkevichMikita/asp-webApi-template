@@ -1,4 +1,5 @@
 ﻿using HelpersCommon.Logger;
+using Microsoft.Extensions.Configuration;
 
 namespace FS.Shared.Settings
 {

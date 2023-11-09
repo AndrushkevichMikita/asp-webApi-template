@@ -1,4 +1,4 @@
-namespace asp_webApi_template.Models
+namespace asp_web_api_template.Models
 {
     public class ErrorViewModel
     {

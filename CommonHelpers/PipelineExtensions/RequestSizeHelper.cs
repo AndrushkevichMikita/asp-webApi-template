@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
-using System.Linq;
 
 namespace HelpersCommon.PipelineExtensions
 {

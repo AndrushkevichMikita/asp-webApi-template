@@ -4,8 +4,8 @@
     <TargetFramework>net6.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <UserSecretsId>aspnet-asp_webApi_template-5c73d8bd-ef2c-4716-964c-2113906f4703</UserSecretsId>
-    <RootNamespace>asp_webApi_template</RootNamespace>
+    <UserSecretsId>aspnet-asp_web_api_template-5bf96195-4cd4-4295-970a-e1453f0d4509</UserSecretsId>
+    <RootNamespace>asp_web_api_template</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
@@ -15,6 +15,10 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="6.0.22" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="6.0.22" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CommonHelpers\CommonHelpers.csproj" />
   </ItemGroup>
 
 </Project>

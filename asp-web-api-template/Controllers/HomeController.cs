@@ -1,8 +1,8 @@
-﻿using asp_webApi_template.Models;
+﻿using asp_web_api_template.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 
-namespace asp_webApi_template.Controllers
+namespace asp_web_api_template.Controllers
 {
     public class HomeController : Controller
     {

@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore.Migrations;
 using System;
 
-namespace asp_webApi_template.Data.Migrations
+namespace asp_web_api_template.Data.Migrations
 {
     public partial class CreateIdentitySchema : Migration
     {
