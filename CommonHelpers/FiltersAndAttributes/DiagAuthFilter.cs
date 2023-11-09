@@ -1,10 +1,9 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using HelpersCommon.ExceptionHandler;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Linq;
 
 namespace HelpersCommon.FiltersAndAttributes
 {
@@ -13,13 +12,21 @@ namespace HelpersCommon.FiltersAndAttributes
     /// OR with extra parameter in query http://{domain}/route?key={DiagAuthorizeKey}
     /// where {DiagAuthorizeKey} see in appsettings.json
     /// </summary>
-    public class DiagAuthorizeFactory : AuthorizeAttribute, IFilterFactory, IAllowAnonymous
+    public class DiagAuthorizeAttribute : AuthorizeAttribute, IFilterFactory, IAllowAnonymous
     {
         public bool IsReusable => false;
 
+        public DiagAuthorizeAttribute(params object[] roles)
+        {
+            if (roles.Any(r => r.GetType().BaseType != typeof(Enum)))
+                throw new MyApplicationException(ErrorStatus.InvalidData, "Should take enum");
+
+            Roles = string.Join(",", roles.Select(r => Enum.GetName(r.GetType(), r)));
+        }
+
         public IFilterMetadata CreateInstance(IServiceProvider serviceProvider)
         {
-            var attr = serviceProvider.GetService<DiagAuthorizeAttribute>();
+            var attr = serviceProvider.GetService<DiagAuthorizeFactoryAttribute>();
             attr.Roles = Roles;
             attr.Policy = Policy;
             attr.AuthenticationSchemes = AuthenticationSchemes;
@@ -29,11 +36,11 @@ namespace HelpersCommon.FiltersAndAttributes
     }
 
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = true, Inherited = true)]
-    public class DiagAuthorizeAttribute : AuthorizeAttribute, IAuthorizationFilter, IAllowAnonymous
+    public class DiagAuthorizeFactoryAttribute : AuthorizeAttribute, IAuthorizationFilter, IAllowAnonymous
     {
         public string FallbackQueryKey { get; set; }
 
-        public DiagAuthorizeAttribute(IConfiguration config)
+        public DiagAuthorizeFactoryAttribute(IConfiguration config)
         {
             FallbackQueryKey = config.GetSection("DiagAuthorizeKey").Value;
         }

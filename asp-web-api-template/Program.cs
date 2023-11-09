@@ -27,7 +27,7 @@ try
     // applying appsettings
     builder.Configuration.ApplyConfiguration();
 
-    builder.Services.AddScoped<DiagAuthorizeAttribute>();
+    builder.Services.AddScoped<DiagAuthorizeFactoryAttribute>();
     builder.Services.AddScoped<SecureAllowAnonymousAttribute>();
     builder.Services.AddSingleton<HelpersCommon.Logger.ILogger, Logger>();
     builder.Services.AddScoped<IAuthorizationHandler, MinPermissionHandler>();
@@ -185,7 +185,7 @@ try
             // don't allow it for Production side - because it shares internal IP
             endpoints.MapGet("/myip", async context =>
             {
-                var ip = context.Connection.RemoteIpAddress.MapToIPv4()?.ToString();
+                var ip = context.Connection.RemoteIpAddress?.MapToIPv4()?.ToString();
                 var header = context.Request.Headers["X-Forwarded-For"].ToString();
                 var str = new StringBuilder();
                 str.Append(ip ?? "null");

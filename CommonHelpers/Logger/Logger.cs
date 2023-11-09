@@ -1,13 +1,7 @@
 ﻿using HelpersCommon.ExceptionHandler;
 using Microsoft.Extensions.Configuration;
-using System;
-using System.Collections.Generic;
-using System.IO;
 using System.IO.Compression;
-using System.Linq;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace HelpersCommon.Logger
 {
@@ -16,9 +10,6 @@ namespace HelpersCommon.Logger
         Info,
         Debug,
         Error,
-        /// <summary>
-        /// Always log to file (ignoring FilePath empty options)
-        /// </summary>
         CriticalError,
         TraceHttp
     }
@@ -62,6 +53,7 @@ namespace HelpersCommon.Logger
             }
             internal set { _settings = value; }
         }
+
         #region Inside
 
         public static List<LogPair> ErrorsInMemory { get; private set; } = new List<LogPair>();
