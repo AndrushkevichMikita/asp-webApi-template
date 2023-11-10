@@ -1,34 +1,84 @@
-﻿using FS.Shared.Models.Controllers;
+﻿using asp_web_api_template.Data;
+using FS.Shared.Models.Controllers;
+using HelpersCommon.ExceptionHandler;
 using HelpersCommon.FiltersAndAttributes;
 using HelpersCommon.Logger;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using System.Data;
 using System.Text;
-using ILogger = HelpersCommon.Logger.ILogger;
 
 namespace asp_web_api_template.Controllers
 {
-    public enum RoleEnum
-    {
-        SuperAdmin = 1,
-        Admin,
-    }
+    //[DiagAuthorize(RoleEnum.SuperAdmin, RoleEnum.Admin)]
 
-    [DiagAuthorize(RoleEnum.SuperAdmin, RoleEnum.Admin)]
     [ApiController]
     public class TestController : BaseController
     {
-        private readonly ILogger _logger;
-
-        public TestController(ILogger logger)
+        [HttpPost("api/user/signUp")]
+        public async Task SignIn([FromQuery] bool isSupAdmin,
+            [FromServices] UserManager<TestIdentityUser> manager,
+            [FromServices] RoleManager<IdentityRole<int>> roleManager,
+            [FromServices] SignInManager<TestIdentityUser> signManager)
         {
-            _logger = logger;
+            var toInsert = new TestIdentityUser
+            {
+                Email = "test@gmail.com",
+                Role = isSupAdmin ? RoleEnum.SuperAdmin : RoleEnum.Admin,
+                UserName = "test" + new Random().Next().ToString(),
+            };
+
+            await roleManager.CreateAsync(new IdentityRole<int>
+            {
+                Id = (int)RoleEnum.SuperAdmin,
+                Name = RoleEnum.SuperAdmin.ToString()
+            });
+            await roleManager.CreateAsync(new IdentityRole<int>
+            {
+                Id = (int)RoleEnum.Admin,
+                Name = RoleEnum.Admin.ToString()
+            });
+
+            await manager.CreateAsync(toInsert);
+            await manager.AddToRoleAsync(toInsert, toInsert.Role.ToString());
+            var i = await manager.FindByEmailAsync("test@gmail.com");
+            await signManager.SignInAsync(i, false);
+        }
+
+        [AuthorizeRoles(RoleEnum.SuperAdmin)]
+        [HttpPost("api/user/onlyForSupAdmin")]
+        public IActionResult AllowOnlyForSupAdmin()
+        {
+            return Ok();
+        }
+
+        [Authorize]
+        [HttpPost("api/user/signOut")]
+        public async Task SignOut([FromServices] SignInManager<TestIdentityUser> s)
+        {
+            await s.SignOutAsync();
+        }
+
+        [Authorize]
+        [HttpPost("api/user/authorize")]
+        public IActionResult CheckAuthorization()
+        {
+            var r = User.IsInRole(RoleEnum.SuperAdmin.ToString());
+            return Ok(User.Claims.Select(c => c.Value).ToList());
+        }
+
+        [HttpPost("api/diag/errors")]
+        public void CheckError()
+        {
+            throw new MyApplicationException(ErrorStatus.InvalidData, "Invalid Data");
         }
 
         [HttpGet("api/diag/errors")]
-        public string ErrorInMemoryGet([FromQuery] string key)
+        public string ErrorInMemoryGet()
         {
             var log = Logger.ErrorsInMemory;
-            if (log.Count == 1)
+            if (log.Count < 1)
                 return "No errors";
 
             var str = new StringBuilder();

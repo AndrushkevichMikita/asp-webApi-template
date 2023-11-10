@@ -1,9 +1,7 @@
 ﻿using HelpersCommon.ExceptionHandler;
 using Microsoft.AspNetCore.Authorization;
 using System.Collections.Concurrent;
-using System.Linq;
 using System.Security.Claims;
-using System.Threading.Tasks;
 
 namespace HelpersCommon.ControllerExtensions
 {

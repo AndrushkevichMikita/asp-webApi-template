@@ -6,7 +6,6 @@ using HelpersCommon.Extensions;
 using HelpersCommon.FiltersAndAttributes;
 using HelpersCommon.Logger;
 using HelpersCommon.PipelineExtensions;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -36,7 +35,8 @@ try
     builder.Services.AddHealthChecks();
 
     // Add services to the container.
-    builder.Services.AddDbContext<ApplicationDbContext>(x => x.UseSqlServer(Config.DefaultConnStr));
+    //builder.Services.AddDbContext<ApplicationDbContext>(x => x.UseSqlServer(Config.DefaultConnStr)); // for real db
+    builder.Services.AddDbContext<ApplicationDbContext>(x => x.UseInMemoryDatabase(Guid.NewGuid().ToString()));  // for in memory db
 
 #if DEBUG
     builder.Services.AddDatabaseDeveloperPageExceptionFilter();
@@ -56,7 +56,7 @@ try
     builder.Services.AddSession();
     builder.Services.AddDistributedMemoryCache();
     // identity
-    builder.Services.AddDefaultIdentity<IdentityUser>(options =>
+    builder.Services.AddDefaultIdentity<TestIdentityUser>(options =>
     {
         //password validation
         options.Password.RequireNonAlphanumeric = false;
@@ -71,18 +71,14 @@ try
         options.Lockout.AllowedForNewUsers = true;
         options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(30);
         options.Lockout.MaxFailedAccessAttempts = 6;
-    }).AddEntityFrameworkStores<ApplicationDbContext>().AddDefaultTokenProviders();
-    // authentication
-    builder.Services.AddAuthentication(opt =>
+    }).AddRoles<IdentityRole<int>>()
+      .AddEntityFrameworkStores<ApplicationDbContext>()
+      .AddDefaultTokenProviders();
+
+    builder.Services.ConfigureApplicationCookie(options =>
     {
-        opt.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-        opt.DefaultChallengeScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-        opt.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-    })
-    .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
-    {
-        options.SlidingExpiration = true;
         options.Cookie.HttpOnly = true;
+        options.SlidingExpiration = true;
         options.Cookie.SecurePolicy = Config.IsProd || Config.IsStaging ? CookieSecurePolicy.Always : CookieSecurePolicy.SameAsRequest;
         options.ExpireTimeSpan = TimeSpan.FromMinutes(builder.Configuration.GetSection("CookiesSettings").GetValue<int>("ExpirationMinutes"));
         options.Events.OnRedirectToLogin = context =>
@@ -99,9 +95,9 @@ try
 
     builder.Services.AddAuthorization(options =>
     {
-        options.AddPolicy("Lock", new AuthorizationPolicyBuilder()
-                .AddRequirements(new MinPermissionRequirement())
-                .Build());
+        options.AddPolicy(nameof(MinPermissionHandler), new AuthorizationPolicyBuilder()
+               .AddRequirements(new MinPermissionRequirement())
+               .Build());
     });
 
     builder.Services.AddHsts(opt =>
@@ -132,8 +128,6 @@ try
     }
 
     app.UseHttpsRedirection();
-    app.UseStaticFiles();
-
     app.UseRouting();
 
     if (!Config.IsProd)
@@ -178,7 +172,6 @@ try
         });
 
         endpoints.MapHealthChecks("/health");
-        endpoints.MapGet("/version", async context => await context.Response.WriteAsync(File.ReadAllLines("./appVersion.txt")[0]));
         endpoints.MapGet("/api/version", async context => await context.Response.WriteAsync(File.ReadAllLines("./appVersion.txt")[0]));
         if (!Config.IsProd)
         {
@@ -195,7 +188,9 @@ try
                 await context.Response.WriteAsync(str.ToString());
             });
         }
-        //endpoints.MapControllers().RequireAuthorization(new AuthorizeAttribute()).RequireAuthorization("Lock");
+        endpoints.MapControllers()
+                 //.RequireAuthorization(new AuthorizeAttribute()) // TODO: Do we need this line to work MinPermissionHandler
+                 .RequireAuthorization(nameof(MinPermissionHandler));
     });
     app.Run();
 }
