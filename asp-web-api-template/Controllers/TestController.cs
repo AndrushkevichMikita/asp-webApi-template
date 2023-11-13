@@ -11,11 +11,10 @@ using System.Text;
 
 namespace asp_web_api_template.Controllers
 {
-    //[DiagAuthorize(RoleEnum.SuperAdmin, RoleEnum.Admin)]
-
     [ApiController]
     public class TestController : BaseController
     {
+        [AllowAnonymous]
         [HttpPost("api/user/signUp")]
         public async Task SignIn([FromQuery] bool isSupAdmin,
             [FromServices] UserManager<TestIdentityUser> manager,
@@ -53,14 +52,12 @@ namespace asp_web_api_template.Controllers
             return Ok();
         }
 
-        [Authorize]
         [HttpPost("api/user/signOut")]
         public async Task SignOut([FromServices] SignInManager<TestIdentityUser> s)
         {
             await s.SignOutAsync();
         }
 
-        [Authorize]
         [HttpPost("api/user/authorize")]
         public IActionResult CheckAuthorization()
         {
@@ -68,12 +65,14 @@ namespace asp_web_api_template.Controllers
             return Ok(User.Claims.Select(c => c.Value).ToList());
         }
 
+        [AllowAnonymous]
         [HttpPost("api/diag/errors")]
         public void CheckError()
         {
             throw new MyApplicationException(ErrorStatus.InvalidData, "Invalid Data");
         }
 
+        [AllowAnonymous]
         [HttpGet("api/diag/errors")]
         public string ErrorInMemoryGet()
         {

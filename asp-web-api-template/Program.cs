@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using System.Data;
 using System.Net;
 using System.Text;
 
@@ -117,15 +118,9 @@ try
 
     // Configure the HTTP request pipeline.
     if (app.Environment.IsDevelopment())
-    {
-        app.UseMigrationsEndPoint();
-    }
+        app.UseMigrationsEndPoint(); // Error-page with migrations that were not applied
     else
-    {
-        app.UseExceptionHandler("/Home/Error");
-        // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-        app.UseHsts();
-    }
+        app.UseHsts();  // The default HSTS value is 30 days.
 
     app.UseHttpsRedirection();
     app.UseRouting();
@@ -150,7 +145,7 @@ try
     app.UseSession();
 
     // logger
-    var l = app.Services.GetRequiredService<HelpersCommon.Logger.ILogger>();
+    var l = app.Services.GetRequiredService<HelpersCommon.Logger.ILogger>(); // WARN: can get it without new scope because it singleton
     app.LogRequestAndResponse(l);
     app.RegisterExceptionAndLog(l);
 
@@ -189,9 +184,16 @@ try
             });
         }
         endpoints.MapControllers()
-                 //.RequireAuthorization(new AuthorizeAttribute()) // TODO: Do we need this line to work MinPermissionHandler
+                 .RequireAuthorization(new AuthorizeAttribute()) // WARN: Enables global [Authorize] attribute for each controller
                  .RequireAuthorization(nameof(MinPermissionHandler));
     });
+
+    // adding roles
+    var roleManager = app.Services.CreateScope().ServiceProvider.GetRequiredService<RoleManager<IdentityRole<int>>>();
+    foreach (var role in Enum.GetNames(typeof(RoleEnum)))
+        if (!await roleManager.RoleExistsAsync(role))
+            await roleManager.CreateAsync(new IdentityRole<int> { Name = role });
+
     app.Run();
 }
 catch (Exception ex)
