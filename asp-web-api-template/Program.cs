@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.OpenApi.Models;
 using System.Data;
 using System.Net;
@@ -210,4 +211,17 @@ catch (Exception ex)
         await context.Response.WriteAsync(str.ToString());
     });
     app.Run();
+}
+
+// to fix running startup during migrations-update
+public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<ApplicationDbContext>
+{
+    public ApplicationDbContext CreateDbContext(string[] args)
+    {
+        var builder = WebApplication.CreateBuilder(args);
+        builder.Configuration.ApplyConfiguration();
+        var b = new DbContextOptionsBuilder<ApplicationDbContext>();
+        b.UseSqlServer(builder.Configuration.GetSection("ConnectionStrings").GetValue<string>("DefaultConnection"));
+        return new ApplicationDbContext(b.Options);
+    }
 }
