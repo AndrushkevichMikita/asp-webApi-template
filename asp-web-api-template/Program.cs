@@ -1,5 +1,7 @@
 using asp_web_api_template.Data;
+using FS.Shared.Scheduler;
 using FS.Shared.Settings;
+using FS.WebAdmin.SchedulerTasks;
 using HelpersCommon.ControllerExtensions;
 using HelpersCommon.ExceptionHandler;
 using HelpersCommon.Extensions;
@@ -28,10 +30,16 @@ try
     // applying appsettings
     builder.Configuration.ApplyConfiguration();
 
+    builder.Services.AddScheduler(new List<SchedulerItem>
+    {
+        // new SchedulerItem { TaskType = typeof(SomeName) }, // WARN: It's example of registration
+    });
+
+    builder.Services.AddHostedService<SchedulerHostedService>();
     builder.Services.AddScoped<DiagAuthorizeFactoryAttribute>();
     builder.Services.AddScoped<SecureAllowAnonymousAttribute>();
-    builder.Services.AddSingleton<HelpersCommon.Logger.ILogger, Logger>();
     builder.Services.AddScoped<IAuthorizationHandler, MinPermissionHandler>();
+    builder.Services.AddSingleton<HelpersCommon.Logger.ILogger, Logger>();
     builder.Services.Configure<MvcOptions>(x => x.Conventions.Add(new ModelStateValidatorConvension()));
     builder.Services.LimitFormBodySize(Config.MaxRequestSizeBytes);
     builder.Services.AddHealthChecks();
@@ -189,8 +197,10 @@ try
                  .RequireAuthorization(nameof(MinPermissionHandler));
     });
 
+    var scope = app.Services.CreateScope().ServiceProvider;
+    // scope.GetRequiredService<ApplicationDbContext>().Database.Migrate();
     // adding roles
-    var roleManager = app.Services.CreateScope().ServiceProvider.GetRequiredService<RoleManager<IdentityRole<int>>>();
+    var roleManager = scope.GetRequiredService<RoleManager<IdentityRole<int>>>();
     foreach (var role in Enum.GetNames(typeof(RoleEnum)))
         if (!await roleManager.RoleExistsAsync(role))
             await roleManager.CreateAsync(new IdentityRole<int> { Name = role });
