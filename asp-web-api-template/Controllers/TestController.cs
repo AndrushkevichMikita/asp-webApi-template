@@ -6,6 +6,7 @@ using HelpersCommon.Logger;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Data;
 using System.Text;
 
@@ -21,6 +22,9 @@ namespace asp_web_api_template.Controllers
             [FromServices] RoleManager<IdentityRole<int>> roleManager,
             [FromServices] SignInManager<TestIdentityUser> signManager)
         {
+            var toDelete = await manager.Users.FirstOrDefaultAsync();
+            if (toDelete is not null) await manager.DeleteAsync(toDelete);
+
             var toInsert = new TestIdentityUser
             {
                 Email = "test@gmail.com",

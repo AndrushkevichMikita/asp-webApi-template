@@ -7,7 +7,7 @@ using System.Linq.Expressions;
 namespace FS.Shared.Repository
 {
     public class RepositoryBase<TEntity, TContext> : IRepo<TEntity, TContext> where TEntity : class
-                                                                                        where TContext : DbContext
+                                                                              where TContext : DbContext
     {
         /// <summary>
         /// Min value when bulk must operation must be applied
@@ -92,7 +92,7 @@ namespace FS.Shared.Repository
         /// Throws exception if entity is not attached.
         /// </summary>
         /// <exception cref="NullReferenceException" ></exception>
-        public virtual TEntity Update(TEntity entity, bool saveChanges = false)
+        public virtual TEntity UpdatePartial(TEntity entity, bool saveChanges = false)
         {
             var exist = DbSet.Local.FirstOrDefault(entity) ?? throw new NullReferenceException("Entity not attached");
             Context.Entry(exist).CurrentValues.SetValues(entity);
@@ -116,12 +116,12 @@ namespace FS.Shared.Repository
         #endregion
 
         #region Async Members
-        public virtual async Task<object> InsertAsync(TEntity entity, bool saveChanges = false, CancellationToken cancellationToken = default)
+        public virtual async Task<TEntity> InsertAsync(TEntity entity, bool saveChanges = false, CancellationToken cancellationToken = default)
         {
             var rtn = await DbSet.AddAsync(entity, cancellationToken);
             if (saveChanges)
                 await Context.SaveChangesAsync(cancellationToken);
-            return rtn;
+            return rtn.Entity;
         }
 
         public virtual async Task<TList?> InsertAsync<TList>(TList entities, bool saveChanges = false, bool ignoreBulk = false, CancellationToken cancellationToken = default) where TList : IList<TEntity>
@@ -212,7 +212,6 @@ namespace FS.Shared.Repository
         /// <summary>
         /// Update entity by related PK, with only modified props.
         /// </summary>
-        /// <exception cref="NullReferenceException" ></exception>
         public virtual async Task<TList> UpdatePartialNotTrackedAsync<TList>(TList entity, bool saveChanges = false, CancellationToken cancellationToken = default) where TList : IList<TEntity>
         {
             DbSet.AttachRange(entity);

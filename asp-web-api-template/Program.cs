@@ -45,8 +45,11 @@ try
     builder.Services.AddHealthChecks();
 
     // Add services to the container.
-    //builder.Services.AddDbContext<ApplicationDbContext>(x => x.UseSqlServer(Config.DefaultConnStr)); // for real db
-    builder.Services.AddDbContext<ApplicationDbContext>(x => x.UseInMemoryDatabase(Guid.NewGuid().ToString()));  // for in memory db
+    var isInMemoryDb = builder.Configuration.GetValue<bool>("IsInMemoryDb");
+    if (isInMemoryDb)
+        builder.Services.AddDbContext<ApplicationDbContext>(x => x.UseInMemoryDatabase(Guid.NewGuid().ToString()));
+    else
+        builder.Services.AddDbContext<ApplicationDbContext>(x => x.UseSqlServer(builder.Configuration.GetSection("ConnectionStrings").GetValue<string>("DefaultConnection")));
 
 #if DEBUG
     builder.Services.AddDatabaseDeveloperPageExceptionFilter();
@@ -198,7 +201,7 @@ try
     });
 
     var scope = app.Services.CreateScope().ServiceProvider;
-    // scope.GetRequiredService<ApplicationDbContext>().Database.Migrate();
+    if (!isInMemoryDb) scope.GetRequiredService<ApplicationDbContext>().Database.Migrate();
     // adding roles
     var roleManager = scope.GetRequiredService<RoleManager<IdentityRole<int>>>();
     foreach (var role in Enum.GetNames(typeof(RoleEnum)))
