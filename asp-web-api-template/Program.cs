@@ -1,4 +1,5 @@
 using asp_web_api_template.Data;
+using FS.Shared.Repository;
 using FS.Shared.Scheduler;
 using FS.Shared.Settings;
 using FS.WebAdmin.SchedulerTasks;
@@ -38,6 +39,7 @@ try
     builder.Services.AddHostedService<SchedulerHostedService>();
     builder.Services.AddScoped<DiagAuthorizeFactoryAttribute>();
     builder.Services.AddScoped<SecureAllowAnonymousAttribute>();
+    builder.Services.AddScoped(typeof(IRepo<,>), typeof(RepositoryBase<,>));
     builder.Services.AddScoped<IAuthorizationHandler, MinPermissionHandler>();
     builder.Services.AddSingleton<HelpersCommon.Logger.ILogger, Logger>();
     builder.Services.Configure<MvcOptions>(x => x.Conventions.Add(new ModelStateValidatorConvension()));
