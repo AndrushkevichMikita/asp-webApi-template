@@ -2,10 +2,9 @@
 using FS.Shared.Settings;
 using HelpersCommon.PrimitivesExtensions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
 using System.Linq.Expressions;
 
-namespace FS.Shared.Repository
+namespace ApplicationCore.Repository
 {
     public class RepositoryBase<TEntity, TContext> : IRepo<TEntity, TContext> where TEntity : class
                                                                               where TContext : DbContext
@@ -34,18 +33,6 @@ namespace FS.Shared.Repository
         }
 
         #region Regular Members
-        public virtual IQueryable<TEntity> GetBy(Expression<Func<TEntity, bool>> expr, bool asNoTracking = false, params Expression<Func<TEntity, object>>[] includes)
-        {
-            var r = GetIQueryable();
-            if (asNoTracking)
-                r = r.AsNoTracking();
-
-            foreach (Expression<Func<TEntity, object>> includeProperty in includes)
-                r = r.Include(includeProperty);
-
-            return r.Where(expr);
-        }
-
         public virtual IQueryable<TEntity> GetIQueryable(bool asNoTracking)
         {
             var r = GetIQueryable();
@@ -57,52 +44,6 @@ namespace FS.Shared.Repository
         public virtual IQueryable<TEntity> GetIQueryable()
         {
             return DbSet.AsQueryable();
-        }
-
-        public virtual EntityEntry<TEntity> Insert(TEntity entity, bool saveChanges = false)
-        {
-            var rtn = DbSet.Add(entity);
-            if (saveChanges)
-                Context.SaveChanges();
-            return rtn;
-        }
-
-        public virtual EntityEntry<TEntity> Delete(TEntity entity, bool saveChanges = false)
-        {
-            var rtn = DbSet.Remove(entity);
-            if (saveChanges)
-                Context.SaveChanges();
-            return rtn;
-        }
-
-        public virtual void UpdateFull(TEntity entity, bool saveChanges = false)
-        {
-            DbSet.Attach(entity);
-            DbSet.Update(entity);
-            if (saveChanges)
-                Context.SaveChanges();
-        }
-
-        public virtual TEntity UpdatePartial(TEntity entity, bool saveChanges = false)
-        {
-            var exist = DbSet.Local.FirstOrDefault(entity) ?? throw new NullReferenceException("Entity not attached");
-            Context.Entry(exist).CurrentValues.SetValues(entity);
-            if (saveChanges)
-                Context.SaveChanges();
-            return exist;
-        }
-
-        public virtual void Commit()
-        {
-            Context.SaveChanges();
-            // WARN: Fix cases when same entity (with same inique id) may be attached again in scope of one context (scoped)
-            // Example: test = new() {id: 1, name: "test"}
-            //          UpdateAsync(test, saveChanges: false, m => m.name);
-            //           test = new() { id: 1, name: "test" }
-            //          UpdateAsync(test, saveChanges: true, m => m.name);
-            // in these case without  Context.ChangeTracker.Clear(), error will be thrown
-            //Context.ChangeTracker.Clear();
-            Context.ChangeTracker.Clear();
         }
         #endregion
 
@@ -227,6 +168,7 @@ namespace FS.Shared.Repository
                 disposed = true;
             }
         }
+
         public void Dispose()
         {
             Dispose(true);
