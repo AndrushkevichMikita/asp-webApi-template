@@ -1,4 +1,5 @@
-using asp_web_api_template.Data;
+using DAL;
+using DAL.Entities;
 using FS.Shared.Repository;
 using FS.Shared.Scheduler;
 using FS.Shared.Settings;
@@ -71,7 +72,7 @@ try
     builder.Services.AddSession();
     builder.Services.AddDistributedMemoryCache();
     // identity
-    builder.Services.AddDefaultIdentity<TestIdentityUser>(options =>
+    builder.Services.AddDefaultIdentity<UserEntity>(options =>
     {
         //password validation
         options.Password.RequireNonAlphanumeric = false;

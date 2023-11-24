@@ -5,7 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>aspnet-asp_web_api_template-5bf96195-4cd4-4295-970a-e1453f0d4509</UserSecretsId>
-    <RootNamespace>asp_web_api_template</RootNamespace>
+    <RootNamespace>Web</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\CommonHelpers\CommonHelpers.csproj" />
+    <ProjectReference Include="..\DAL\DAL.csproj" />
   </ItemGroup>
 
 </Project>
