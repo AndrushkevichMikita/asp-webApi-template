@@ -1,5 +1,7 @@
 using ApplicationCore.Entities;
+using ApplicationCore.Interfaces;
 using ApplicationCore.Repository;
+using ApplicationCore.Services;
 using DAL;
 using FS.Shared.Scheduler;
 using FS.Shared.Settings;
@@ -40,6 +42,7 @@ try
     builder.Services.AddHostedService<SchedulerHostedService>();
     builder.Services.AddScoped<DiagAuthorizeFactoryAttribute>();
     builder.Services.AddScoped<SecureAllowAnonymousAttribute>();
+    builder.Services.AddScoped<IAccountService, AccountService>();
     builder.Services.AddScoped(typeof(IRepo<,>), typeof(RepositoryBase<,>));
     builder.Services.AddScoped<IAuthorizationHandler, MinPermissionHandler>();
     builder.Services.AddSingleton<HelpersCommon.Logger.ILogger, Logger>();
