@@ -1,4 +1,4 @@
-﻿using asp_web_api_template.Data;
+﻿using ApplicationCore.Entities;
 using FS.Shared.Models.Controllers;
 using HelpersCommon.ExceptionHandler;
 using HelpersCommon.FiltersAndAttributes;
@@ -18,14 +18,14 @@ namespace asp_web_api_template.Controllers
         [AllowAnonymous]
         [HttpPost("api/user/signUp")]
         public async Task SignIn([FromQuery] bool isSupAdmin,
-            [FromServices] UserManager<TestIdentityUser> manager,
+            [FromServices] UserManager<UserEntity> manager,
             [FromServices] RoleManager<IdentityRole<int>> roleManager,
-            [FromServices] SignInManager<TestIdentityUser> signManager)
+            [FromServices] SignInManager<UserEntity> signManager)
         {
             var toDelete = await manager.Users.FirstOrDefaultAsync();
             if (toDelete is not null) await manager.DeleteAsync(toDelete);
 
-            var toInsert = new TestIdentityUser
+            var toInsert = new UserEntity
             {
                 Email = "test@gmail.com",
                 Role = isSupAdmin ? RoleEnum.SuperAdmin : RoleEnum.Admin,
@@ -57,7 +57,7 @@ namespace asp_web_api_template.Controllers
         }
 
         [HttpPost("api/user/signOut")]
-        public async Task SignOut([FromServices] SignInManager<TestIdentityUser> s)
+        public async Task SignOut([FromServices] SignInManager<UserEntity> s)
         {
             await s.SignOutAsync();
         }

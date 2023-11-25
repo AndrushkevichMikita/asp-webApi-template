@@ -1,6 +1,6 @@
+using ApplicationCore.Entities;
+using ApplicationCore.Repository;
 using DAL;
-using DAL.Entities;
-using FS.Shared.Repository;
 using FS.Shared.Scheduler;
 using FS.Shared.Settings;
 using FS.WebAdmin.SchedulerTasks;
