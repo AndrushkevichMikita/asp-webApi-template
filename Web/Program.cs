@@ -22,6 +22,7 @@ using System.Data;
 using System.Net;
 using System.Text;
 
+
 try
 {
     var builder = WebApplication.CreateBuilder(args);
@@ -55,7 +56,17 @@ try
     if (isInMemoryDb)
         builder.Services.AddDbContext<ApplicationDbContext>(x => x.UseInMemoryDatabase(Guid.NewGuid().ToString()));
     else
-        builder.Services.AddDbContext<ApplicationDbContext>(x => x.UseSqlServer(builder.Configuration.GetSection("ConnectionStrings").GetValue<string>("DefaultConnection")));
+    {
+        var section = builder.Configuration.GetSection("ConnectionStrings");
+        var connection = builder.Configuration.GetValue<UseDb>(nameof(UseDb)) switch
+        {
+            UseDb.Azure => Environment.GetEnvironmentVariable("DOTNET_AzureDb") ?? section.GetValue<string>("AzureDb"),
+            UseDb.AWS => Environment.GetEnvironmentVariable("DOTNET_AWSDb") ?? section.GetValue<string>("AWSDb"),
+            _ => section.GetValue<string>("MSSQLDb")
+        } ?? throw new MyApplicationException(ErrorStatus.InvalidData, "Db connection");
+
+        builder.Services.AddDbContext<ApplicationDbContext>(x => x.UseSqlServer(connection));
+    }
 
 #if DEBUG
     builder.Services.AddDatabaseDeveloperPageExceptionFilter();

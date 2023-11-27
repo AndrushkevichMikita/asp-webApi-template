@@ -3,6 +3,12 @@ using Microsoft.Extensions.Configuration;
 
 namespace FS.Shared.Settings
 {
+    public enum UseDb
+    {
+        Azure = 1,
+        MSSQL,
+        AWS
+    }
 
     public static class Config
     {
