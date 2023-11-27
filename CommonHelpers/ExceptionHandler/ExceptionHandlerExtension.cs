@@ -1,7 +1,5 @@
-﻿using HelpersCommon.Logger;
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using System;
 using System.Text.Json;
 
 namespace HelpersCommon.ExceptionHandler
@@ -11,7 +9,7 @@ namespace HelpersCommon.ExceptionHandler
         public static string ProvideJsonError(string message)
             => "{\"errorMessage\":" + message + "}";
 
-        public static void RegisterExceptionAndLog(this IApplicationBuilder app, ILogger logger)
+        public static void RegisterExceptionAndLog(this IApplicationBuilder app, HelpersCommon.Logger.ILogger logger)
         {
 #if DEBUG
             app.UseDeveloperExceptionPage();
