@@ -365,16 +365,7 @@ FodyWeavers.xsd
 
 # IntellijIdea files
 .idea
-FS.WebAdmin/wwwroot/
 
-FS.Video/ffmpeg/
-
-FS.Video/aws-beanstalk-tools-defaults.json
-
-FS.WebAdmin/aws-beanstalk-tools-defaults.json
-
-FS.WebRR/wwwroot/
-
-FS.WebRR/.config/dotnet-tools.json
-
+# Custom
+Web/Properties
 cicd-local.json
