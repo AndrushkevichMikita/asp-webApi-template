@@ -58,10 +58,12 @@ try
     else
     {
         var section = builder.Configuration.GetSection("ConnectionStrings");
-        var connection = builder.Configuration.GetValue<UseDb>(nameof(UseDb)) switch
+        var useDb = Enum.Parse<UseDb>(Environment.GetEnvironmentVariable("UseDb") ?? builder.Configuration.GetValue<UseDb>(nameof(UseDb)).ToString());
+        var connection = useDb switch
         {
             UseDb.Azure => Environment.GetEnvironmentVariable("DOTNET_AzureDb") ?? section.GetValue<string>("AzureDb"),
             UseDb.AWS => Environment.GetEnvironmentVariable("DOTNET_AWSDb") ?? section.GetValue<string>("AWSDb"),
+            UseDb.Docker => Environment.GetEnvironmentVariable("DOTNET_DockerDb") ?? section.GetValue<string>("DockerDb"),
             _ => section.GetValue<string>("MSSQLDb")
         } ?? throw new MyApplicationException(ErrorStatus.InvalidData, "Db connection");
 

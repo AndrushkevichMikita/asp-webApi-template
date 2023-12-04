@@ -7,7 +7,8 @@ namespace FS.Shared.Settings
     {
         Azure = 1,
         MSSQL,
-        AWS
+        AWS,
+        Docker,
     }
 
     public static class Config
