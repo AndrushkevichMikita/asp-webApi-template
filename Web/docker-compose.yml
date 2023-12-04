@@ -20,3 +20,7 @@ services:
         ACCEPT_EULA: "Y"
         SA_PASSWORD: Passw0rd123
         MSSQL_PID: Express
+    volumes:
+      - db_data:/var/opt/mssql
+volumes:
+  db_data:
