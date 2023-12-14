@@ -1,12 +1,9 @@
-﻿using Microsoft.EntityFrameworkCore;
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 
 namespace ApplicationCore.Repository
 {
-    public interface IRepo<TEntity, TContext> where TEntity : class
-                                              where TContext : DbContext
+    public interface IRepo<TEntity> where TEntity : class
     {
-        TContext Context { get; set; }
         IQueryable<TEntity> GetIQueryable(bool asNoTracking);
         IQueryable<TEntity> GetIQueryable();
         void Dispose();

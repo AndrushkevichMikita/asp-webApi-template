@@ -25,6 +25,11 @@ namespace asp_web_api_template.Controllers
             => await _account.SignIn(model);
 
         [AllowAnonymous]
+        [HttpPost("api/account/digitCode")]
+        public async Task SendDigitCodeByEmail([FromBody] string email)
+            => await _account.SendDigitCodeByEmail(email);
+
+        [AllowAnonymous]
         [HttpPost("api/account/signUp")]
         public async Task SignUp(AccountModel model)
             => await _account.SignUp(model);

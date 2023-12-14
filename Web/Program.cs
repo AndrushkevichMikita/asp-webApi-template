@@ -21,6 +21,7 @@ using Microsoft.OpenApi.Models;
 using System.Data;
 using System.Net;
 using System.Text;
+using ILogger = HelpersCommon.Logger.ILogger;
 
 
 try
@@ -44,9 +45,12 @@ try
     builder.Services.AddScoped<DiagAuthorizeFactoryAttribute>();
     builder.Services.AddScoped<SecureAllowAnonymousAttribute>();
     builder.Services.AddScoped<IAccountService, AccountService>();
-    builder.Services.AddScoped(typeof(IRepo<,>), typeof(RepositoryBase<,>));
+    builder.Services.AddScoped<ISMTPService, SMTPService>();
     builder.Services.AddScoped<IAuthorizationHandler, MinPermissionHandler>();
-    builder.Services.AddSingleton<HelpersCommon.Logger.ILogger, Logger>();
+    builder.Services.AddScoped<IEmailTemplateService, EmailTemplateService>();
+    builder.Services.AddScoped(typeof(IRepo<>), typeof(RepositoryBase<>));
+
+    builder.Services.AddSingleton<ILogger, Logger>();
     builder.Services.Configure<MvcOptions>(x => x.Conventions.Add(new ModelStateValidatorConvension()));
     builder.Services.LimitFormBodySize(Config.MaxRequestSizeBytes);
     builder.Services.AddHealthChecks();
@@ -69,6 +73,8 @@ try
 
         builder.Services.AddDbContext<ApplicationDbContext>(x => x.UseSqlServer(connection));
     }
+
+    builder.Services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
 
 #if DEBUG
     builder.Services.AddDatabaseDeveloperPageExceptionFilter();
@@ -253,7 +259,7 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<Applicatio
         var builder = WebApplication.CreateBuilder(args);
         builder.Configuration.ApplyConfiguration();
         var b = new DbContextOptionsBuilder<ApplicationDbContext>();
-        b.UseSqlServer(builder.Configuration.GetSection("ConnectionStrings").GetValue<string>("DefaultConnection"));
+        b.UseSqlServer(builder.Configuration.GetSection("ConnectionStrings").GetValue<string>("MSSQLDb"));
         return new ApplicationDbContext(b.Options);
     }
 }

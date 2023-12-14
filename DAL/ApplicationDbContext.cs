@@ -1,4 +1,5 @@
 ﻿using ApplicationCore.Entities;
+using ApplicationCore.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -9,13 +10,14 @@ using System.Diagnostics;
 namespace DAL
 {
     public class ApplicationDbContext : IdentityDbContext<UserEntity,
-                                                          IdentityRole<int>,
-                                                          int,
-                                                          IdentityUserClaim<int>,
-                                                          IdentityUserRole<int>,
-                                                          IdentityUserLogin<int>,
-                                                          IdentityRoleClaim<int>,
-                                                          IdentityUserToken<int>>
+                                        IdentityRole<int>,
+                                        int,
+                                        IdentityUserClaim<int>,
+                                        IdentityUserRole<int>,
+                                        IdentityUserLogin<int>,
+                                        IdentityRoleClaim<int>,
+                                        IdentityUserTokenEntity>,
+                                        IApplicationDbContext
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
@@ -62,6 +64,11 @@ namespace DAL
                         property.SetValueConverter(nullableDateTimeConverter);
                 }
             }
+        }
+
+        public DbContext ProvideContext()
+        {
+            return this;
         }
     }
 }

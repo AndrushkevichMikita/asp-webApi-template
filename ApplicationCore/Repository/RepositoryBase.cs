@@ -1,4 +1,5 @@
-﻿using EFCore.BulkExtensions;
+﻿using ApplicationCore.Interfaces;
+using EFCore.BulkExtensions;
 using FS.Shared.Settings;
 using HelpersCommon.PrimitivesExtensions;
 using Microsoft.EntityFrameworkCore;
@@ -6,19 +7,18 @@ using System.Linq.Expressions;
 
 namespace ApplicationCore.Repository
 {
-    public class RepositoryBase<TEntity, TContext> : IRepo<TEntity, TContext> where TEntity : class
-                                                                              where TContext : DbContext
+    public class RepositoryBase<TEntity> : IRepo<TEntity> where TEntity : class
     {
         /// <summary>
         /// Min value when bulk must operation must be applied
         /// </summary>
         const int bulkFrom = 5;
 
-        public TContext Context { get; set; }
+        public DbContext Context { get; set; }
 
-        public RepositoryBase(TContext appContext)
+        public RepositoryBase(IApplicationDbContext appContext)
         {
-            Context = appContext;
+            Context = appContext.ProvideContext();
             if (!Config.IsDev && !Config.IsPreStaging) Context.Database.SetCommandTimeout(60);
         }
 
