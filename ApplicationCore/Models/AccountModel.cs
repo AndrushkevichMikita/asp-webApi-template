@@ -12,8 +12,13 @@ namespace ApplicationCore.Models
         [Required]
         public string Password { get; set; }
 
+        [Required]
+        public string FirstName { get; set; }
+
+        [Required]
+        public string LastName { get; set; }
+
         public RoleEnum Role { get; set; }
-        public string UserName { get; set; }
         public bool? RememberMe { get; set; }
     }
 }

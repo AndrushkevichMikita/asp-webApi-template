@@ -49,7 +49,7 @@ namespace ApplicationCore.Services
         {
             var appUser = await _manager.FindByEmailAsync(model.Email) ?? throw new MyApplicationException(ErrorStatus.NotFound, "User not found");
             var res = await _signManager.PasswordSignInAsync(appUser, model.Password, false, false);
-            if (!res.Succeeded) throw new MyApplicationException(ErrorStatus.InvalidData, "Password or user invalid");
+            if (!res.Succeeded || await _manager.IsEmailConfirmedAsync(appUser)!) throw new MyApplicationException(ErrorStatus.InvalidData, "Password or user invalid");
         }
 
         public async Task SignUp(AccountModel model)
@@ -60,8 +60,9 @@ namespace ApplicationCore.Services
             {
                 Role = model.Role,
                 Email = model.Email,
-                EmailConfirmed = true,
-                UserName = model.UserName ?? model.Email,
+                LastName = model.LastName,
+                FirstName = model.FirstName,
+                UserName = model.FirstName + " " + model.LastName,
             };
 
             var res = await _manager.CreateAsync(toInsert, model.Password);
@@ -89,13 +90,31 @@ namespace ApplicationCore.Services
                 Value = await _manager.GenerateEmailConfirmationTokenAsync(appUser)
             }, true);
 
-            await _emailTemplateService.SendDigitCodeAsync(new EmailModel
+            await _emailTemplateService.SendDigitCodeParallelAsync(new List<EmailModel>{new  EmailModel
             {
                 UserEmail = appUser.Email,
                 DigitCode = digitCode,
                 FirstName = appUser.FirstName,
                 LastName = appUser.LastName
-            });
+            } });
+        }
+
+        public async Task ConfirmDigitCode(string digitCode)
+        {
+            var tokens = await _userTokenRepo.GetIQueryable()
+                                             .Include(x => x.User)
+                                             .Where(x => x.Name == digitCode && x.LoginProvider == TokenEnum.EmailToken.ToString())
+                                             .ToListAsync();
+
+            if (tokens.Count > 1 || tokens.Count == 0)
+                throw new MyApplicationException(ErrorStatus.InvalidData, "This code is invalid, please request a new one");
+
+            var token = tokens.First();
+            var result = await _manager.ConfirmEmailAsync(token.User, token.Value);
+            if (!result.Succeeded)
+                throw new MyApplicationException(ErrorStatus.InvalidData, result.Errors.FirstOrDefault()!.Description);
+
+            await _userTokenRepo.DeleteAsync(token, true);
         }
     }
 }

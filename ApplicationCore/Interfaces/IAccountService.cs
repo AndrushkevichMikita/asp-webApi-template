@@ -6,6 +6,7 @@ namespace ApplicationCore.Interfaces
     {
         Task SignIn(AccountModel model);
         Task SignUp(AccountModel model);
+        Task ConfirmDigitCode(string digitCode);
         Task SendDigitCodeByEmail(string email);
     }
 }

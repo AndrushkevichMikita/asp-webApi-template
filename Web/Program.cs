@@ -23,7 +23,6 @@ using System.Net;
 using System.Text;
 using ILogger = HelpersCommon.Logger.ILogger;
 
-
 try
 {
     var builder = WebApplication.CreateBuilder(args);

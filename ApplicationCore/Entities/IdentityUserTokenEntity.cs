@@ -6,6 +6,7 @@ namespace ApplicationCore.Entities
     [Table("AspNetUserTokens")]
     public class IdentityUserTokenEntity : IdentityUserToken<int>
     {
+        public UserEntity User { get; set; }
     }
 
     public enum TokenEnum

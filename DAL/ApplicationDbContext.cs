@@ -37,6 +37,9 @@ namespace DAL
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
+
+            builder.Entity<IdentityUserTokenEntity>().HasOne(x => x.User).WithMany(x => x.Tokens).HasForeignKey(x => x.UserId);
+
             UseUtc(builder);
         }
 

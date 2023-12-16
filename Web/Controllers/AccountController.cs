@@ -25,9 +25,14 @@ namespace asp_web_api_template.Controllers
             => await _account.SignIn(model);
 
         [AllowAnonymous]
-        [HttpPost("api/account/digitCode")]
-        public async Task SendDigitCodeByEmail([FromBody] string email)
+        [HttpGet("api/account/digitCode")]
+        public async Task SendDigitCodeByEmail(string email)
             => await _account.SendDigitCodeByEmail(email);
+
+        [AllowAnonymous]
+        [HttpPost("api/account/digitCode")]
+        public async Task ConfirmDigitCode([FromBody] string code)
+            => await _account.ConfirmDigitCode(code);
 
         [AllowAnonymous]
         [HttpPost("api/account/signUp")]
@@ -36,16 +41,12 @@ namespace asp_web_api_template.Controllers
 
         [HttpPost("api/account/signOut")]
         public async Task SignOut([FromServices] SignInManager<UserEntity> s)
-        {
-            await s.SignOutAsync();
-        }
+            => await s.SignOutAsync();
 
         [AuthorizeRoles(RoleEnum.SuperAdmin)]
         [HttpPost("api/account/onlyForSupAdmin")]
         public IActionResult AllowOnlyForSupAdmin()
-        {
-            return Ok();
-        }
+            => Ok();
 
         [HttpGet("api/account/authorize")]
         public IActionResult CheckAuthorization()

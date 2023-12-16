@@ -1,6 +1,5 @@
 ﻿using ApplicationCore.Interfaces;
 using ApplicationCore.Models;
-using FS.Shared.Settings;
 using HelpersCommon.PrimitivesExtensions;
 using Microsoft.AspNetCore.Hosting;
 
@@ -26,10 +25,6 @@ namespace ApplicationCore.Services
                 return GetTemplateFile;
 
             var path = Path.Combine(_hosting.WebRootPath, "emailTemplates", fileName);
-#if DEBUG
-            if (Config.IsDev)
-                path = Path.Combine(_hosting.ContentRootPath, @"..\FS.Shared\wwwroot\emailTemplates", fileName);
-#endif
             GetTemplateFile = await File.ReadAllTextAsync(path);
             return GetTemplateFile;
         }
@@ -53,6 +48,13 @@ namespace ApplicationCore.Services
                        linkText: "");
 
             await _sptmService.SendAsync(model.UserEmail, "Confirmation code", html);
+        }
+
+        private static ParallelOptions _parallelOptions = new() { MaxDegreeOfParallelism = 2 };
+
+        public async Task SendDigitCodeParallelAsync(List<EmailModel> models)
+        {
+            await Parallel.ForEachAsync(models, _parallelOptions, async (model, token) => await SendDigitCodeAsync(model));
         }
     }
 }
