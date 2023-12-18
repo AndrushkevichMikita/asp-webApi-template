@@ -1,10 +1,9 @@
-﻿using FS.Shared.Scheduler;
-using HelpersCommon.Logger;
+﻿using HelpersCommon.Logger;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.Diagnostics;
 
-namespace FS.WebAdmin.SchedulerTasks
+namespace HelpersCommon.Scheduler
 {
     public class SchedulerHostedService : BackgroundService
     {

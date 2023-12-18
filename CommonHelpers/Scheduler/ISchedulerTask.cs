@@ -1,4 +1,4 @@
-﻿namespace FS.Shared.Scheduler
+﻿namespace HelpersCommon.Scheduler
 {
     public interface ISchedulerTask
     {

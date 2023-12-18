@@ -1,7 +1,7 @@
 ﻿using HelpersCommon.Logger;
 using Microsoft.Extensions.Configuration;
 
-namespace FS.Shared.Settings
+namespace CommonHelpers
 {
     public enum UseDb
     {

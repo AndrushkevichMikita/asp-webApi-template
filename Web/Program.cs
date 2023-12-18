@@ -1,27 +1,22 @@
+using ApplicationCore;
 using ApplicationCore.Entities;
 using ApplicationCore.Interfaces;
-using ApplicationCore.Repository;
-using ApplicationCore.Services;
+using CommonHelpers;
 using DAL;
-using FS.Shared.Scheduler;
-using FS.Shared.Settings;
-using FS.WebAdmin.SchedulerTasks;
 using HelpersCommon.ControllerExtensions;
 using HelpersCommon.ExceptionHandler;
 using HelpersCommon.Extensions;
 using HelpersCommon.FiltersAndAttributes;
 using HelpersCommon.Logger;
 using HelpersCommon.PipelineExtensions;
+using HelpersCommon.Scheduler;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.OpenApi.Models;
 using System.Data;
 using System.Net;
 using System.Text;
-using ILogger = HelpersCommon.Logger.ILogger;
 
 try
 {
@@ -32,6 +27,7 @@ try
         x.Limits.KeepAliveTimeout = TimeSpan.FromMinutes(30);
         x.Limits.MaxRequestBodySize = 2 * Config.MaxRequestSizeBytes; // the real limitations see in Startup...FormOptions // https://github.com/dotnet/aspnetcore/issues/20369
     });
+
     // applying appsettings
     builder.Configuration.ApplyConfiguration();
 
@@ -40,44 +36,11 @@ try
         // new SchedulerItem { TaskType = typeof(SomeName) }, // WARN: It's example of registration
     });
 
-    builder.Services.AddHostedService<SchedulerHostedService>();
-    builder.Services.AddScoped<DiagAuthorizeFactoryAttribute>();
-    builder.Services.AddScoped<SecureAllowAnonymousAttribute>();
-    builder.Services.AddScoped<IAccountService, AccountService>();
-    builder.Services.AddScoped<ISMTPService, SMTPService>();
-    builder.Services.AddScoped<IAuthorizationHandler, MinPermissionHandler>();
-    builder.Services.AddScoped<IEmailTemplateService, EmailTemplateService>();
-    builder.Services.AddScoped(typeof(IRepo<>), typeof(RepositoryBase<>));
+    builder.Services.AddCommonServices();
+    builder.Services.AddApplicationServices();
+    builder.Services.AddInfrastructureServices(builder.Configuration);
 
-    builder.Services.AddSingleton<ILogger, Logger>();
-    builder.Services.Configure<MvcOptions>(x => x.Conventions.Add(new ModelStateValidatorConvension()));
-    builder.Services.LimitFormBodySize(Config.MaxRequestSizeBytes);
     builder.Services.AddHealthChecks();
-
-    // Add services to the container.
-    var isInMemoryDb = builder.Configuration.GetValue<bool>("IsInMemoryDb");
-    if (isInMemoryDb)
-        builder.Services.AddDbContext<ApplicationDbContext>(x => x.UseInMemoryDatabase(Guid.NewGuid().ToString()));
-    else
-    {
-        var section = builder.Configuration.GetSection("ConnectionStrings");
-        var useDb = Enum.Parse<UseDb>(Environment.GetEnvironmentVariable("UseDb") ?? builder.Configuration.GetValue<UseDb>(nameof(UseDb)).ToString());
-        var connection = useDb switch
-        {
-            UseDb.Azure => Environment.GetEnvironmentVariable("DOTNET_AzureDb") ?? section.GetValue<string>("AzureDb"),
-            UseDb.AWS => Environment.GetEnvironmentVariable("DOTNET_AWSDb") ?? section.GetValue<string>("AWSDb"),
-            UseDb.Docker => Environment.GetEnvironmentVariable("DOTNET_DockerDb") ?? section.GetValue<string>("DockerDb"),
-            _ => section.GetValue<string>("MSSQLDb")
-        } ?? throw new MyApplicationException(ErrorStatus.InvalidData, "Db connection");
-
-        builder.Services.AddDbContext<ApplicationDbContext>(x => x.UseSqlServer(connection));
-    }
-
-    builder.Services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
-
-#if DEBUG
-    builder.Services.AddDatabaseDeveloperPageExceptionFilter();
-#endif
 
     builder.Services.AddResponseCompression(options =>
     {
@@ -92,25 +55,6 @@ try
 
     builder.Services.AddSession();
     builder.Services.AddDistributedMemoryCache();
-    // identity
-    builder.Services.AddDefaultIdentity<UserEntity>(options =>
-    {
-        //password validation
-        options.Password.RequireNonAlphanumeric = false;
-        options.Password.RequireDigit = true;
-        options.Password.RequireLowercase = true;
-        options.Password.RequireUppercase = true;
-        options.Password.RequiredLength = 8;
-        //User
-        options.User.RequireUniqueEmail = true;
-        options.User.AllowedUserNameCharacters = null;
-        //lockout
-        options.Lockout.AllowedForNewUsers = true;
-        options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(30);
-        options.Lockout.MaxFailedAccessAttempts = 6;
-    }).AddRoles<IdentityRole<int>>()
-      .AddEntityFrameworkStores<ApplicationDbContext>()
-      .AddDefaultTokenProviders();
 
     builder.Services.ConfigureApplicationCookie(options =>
     {
@@ -225,7 +169,7 @@ try
     });
 
     var scope = app.Services.CreateScope().ServiceProvider;
-    if (!isInMemoryDb) scope.GetRequiredService<ApplicationDbContext>().Database.Migrate();
+    if (!builder.Configuration.GetValue<bool>("IsInMemoryDb")) scope.GetRequiredService<IApplicationDbContext>().ProvideContext().Database.Migrate();
     // adding roles
     var roleManager = scope.GetRequiredService<RoleManager<IdentityRole<int>>>();
     foreach (var role in Enum.GetNames(typeof(RoleEnum)))
@@ -248,17 +192,4 @@ catch (Exception ex)
         await context.Response.WriteAsync(str.ToString());
     });
     app.Run();
-}
-
-// to fix running startup during migrations-update
-public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<ApplicationDbContext>
-{
-    public ApplicationDbContext CreateDbContext(string[] args)
-    {
-        var builder = WebApplication.CreateBuilder(args);
-        builder.Configuration.ApplyConfiguration();
-        var b = new DbContextOptionsBuilder<ApplicationDbContext>();
-        b.UseSqlServer(builder.Configuration.GetSection("ConnectionStrings").GetValue<string>("MSSQLDb"));
-        return new ApplicationDbContext(b.Options);
-    }
 }

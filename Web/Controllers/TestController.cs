@@ -1,4 +1,4 @@
-﻿using FS.Shared.Models.Controllers;
+﻿using CommonHelpers;
 using HelpersCommon.ExceptionHandler;
 using HelpersCommon.Logger;
 using Microsoft.AspNetCore.Authorization;

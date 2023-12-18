@@ -4,6 +4,8 @@ namespace ApplicationCore.Entities
 {
     public class UserEntity : IdentityUser<int>
     {
+        public DateTime Created { get; set; }
+        public DateTime LastUpdated { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public RoleEnum Role { get; set; }

@@ -8,12 +8,18 @@
 
   <ItemGroup>
     <PackageReference Include="EFCore.BulkExtensions" Version="6.0.0" />
+    <PackageReference Include="MediatR" Version="12.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="6.0.22" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.22" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\CommonHelpers\CommonHelpers.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Account\Queries\" />
+    <Folder Include="Common\Behaviours\" />
   </ItemGroup>
 
 </Project>

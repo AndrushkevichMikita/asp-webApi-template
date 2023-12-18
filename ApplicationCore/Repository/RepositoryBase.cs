@@ -1,6 +1,6 @@
 ﻿using ApplicationCore.Interfaces;
+using CommonHelpers;
 using EFCore.BulkExtensions;
-using FS.Shared.Settings;
 using HelpersCommon.PrimitivesExtensions;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;

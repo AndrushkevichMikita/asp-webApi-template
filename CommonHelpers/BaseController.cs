@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
-namespace FS.Shared.Models.Controllers
+namespace CommonHelpers
 {
     public class CookieUser
     {

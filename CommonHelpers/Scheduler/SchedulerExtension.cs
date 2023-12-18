@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 
-namespace FS.Shared.Scheduler
+namespace HelpersCommon.Scheduler
 {
     public static class SchedulerExtension
     {
