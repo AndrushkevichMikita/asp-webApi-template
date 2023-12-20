@@ -3,6 +3,7 @@ using ApplicationCore.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
@@ -27,11 +28,13 @@ namespace DAL
 #if DEBUG
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            // uncomment for detect Multiple Collection Includes, to use AsSplitQuery()
-            //optionsBuilder.ConfigureWarnings(w => w.Throw(RelationalEventId.MultipleCollectionIncludeWarning));
+            // for detect Multiple Collection Includes, to use AsSplitQuery()
+            optionsBuilder.ConfigureWarnings(w => w.Throw(RelationalEventId.MultipleCollectionIncludeWarning));
 
             // logging the Command Execution
-            optionsBuilder.LogTo(message => Debug.WriteLine(message), LogLevel.Information);
+            optionsBuilder.LogTo(message => Debug.WriteLine(message), LogLevel.Information)
+                          .EnableSensitiveDataLogging()
+                          .EnableDetailedErrors();
         }
 #endif
         protected override void OnModelCreating(ModelBuilder builder)
