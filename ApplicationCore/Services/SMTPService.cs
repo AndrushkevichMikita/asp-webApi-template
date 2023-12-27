@@ -2,7 +2,7 @@
 using ApplicationCore.Models;
 using HelpersCommon.ExceptionHandler;
 using HelpersCommon.Logger;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using System.Net.Mail;
 
 namespace ApplicationCore.Services
@@ -12,10 +12,10 @@ namespace ApplicationCore.Services
         private readonly ILogger _logger;
         private readonly SMTPSettings _settings;
 
-        public SMTPService(IConfiguration configuration, ILogger logger)
+        public SMTPService(IOptions<SMTPSettings> smtp, ILogger logger)
         {
+            _settings = smtp.Value;
             _logger = logger;
-            _settings = configuration.GetSection("SMTP").Get<SMTPSettings>();
         }
 
         public async Task SendAsync(string destination, string subject, string body)

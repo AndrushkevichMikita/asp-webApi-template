@@ -1,13 +1,13 @@
 ﻿using HelpersCommon.PrimitivesExtensions;
-using System;
 using System.Diagnostics;
-using System.IO;
 using System.Reflection;
 
 namespace HelpersCommon.Logger
 {
     public class LoggerSettings
     {
+        public const string Logger = "FLogger";
+
         public bool AsyncEnable { get; set; }
         public string DateTimeFormat { get; set; } = "yyyy-MM-dd HH:mm:ss.fff";
 

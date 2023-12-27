@@ -1,5 +1,6 @@
 ﻿using HelpersCommon.Logger;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace CommonHelpers
 {
@@ -47,7 +48,7 @@ namespace CommonHelpers
 
                 MaxRequestSizeBytes = c.GetSection("MaxRequestSizeMb").Get<int>() * 1024 * 1024;
 
-                Logger.Instance(c);// set logger settings, no error will be caught in memory or(and) file until this line is reached
+                Logger.Instance(Options.Create(c.GetSection(LoggerSettings.Logger).Get<LoggerSettings>()));// set logger settings, no error will be caught in memory or(and) file until this line is reached
                 Logger.Info($"Current environment : {Env}");
             }
             catch (Exception ex)

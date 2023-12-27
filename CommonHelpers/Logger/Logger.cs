@@ -1,5 +1,5 @@
 ﻿using HelpersCommon.ExceptionHandler;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using System.IO.Compression;
 using System.Text;
 
@@ -28,17 +28,17 @@ namespace HelpersCommon.Logger
 
     public class Logger : ILogger
     {
-        public Logger(IConfiguration configuration)
+        public Logger(IOptions<LoggerSettings> loggerSettings)
         {
-            if (configuration is not null)
-                _settings ??= configuration.GetSection("FLogger").Get<LoggerSettings>();
+            if (loggerSettings is not null)
+                _settings ??= loggerSettings.Value;
         }
 
         private static Logger _instance;
 
-        public static Logger Instance(IConfiguration configuration = null)
+        public static Logger Instance(IOptions<LoggerSettings> loggerSettings = null)
         {
-            _instance ??= new Logger(configuration); // these case only for static usage (exmpl. Logger.Info())
+            _instance ??= new Logger(loggerSettings); // these case only for static usage (exmpl. Logger.Info())
             return _instance;
         }
 

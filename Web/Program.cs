@@ -1,6 +1,7 @@
 using ApplicationCore;
 using ApplicationCore.Entities;
 using ApplicationCore.Interfaces;
+using ApplicationCore.Models;
 using CommonHelpers;
 using DAL;
 using HelpersCommon.ControllerExtensions;
@@ -40,6 +41,9 @@ try
     builder.Services.AddApplicationServices();
     builder.Services.AddInfrastructureServices(builder.Configuration);
 
+    builder.Services.Configure<SMTPSettings>(builder.Configuration.GetSection(SMTPSettings.SMTP));
+    builder.Services.Configure<LoggerSettings>(builder.Configuration.GetSection(LoggerSettings.Logger));
+
     builder.Services.AddHealthChecks();
 
     builder.Services.AddResponseCompression(options =>
@@ -60,8 +64,8 @@ try
     {
         options.Cookie.HttpOnly = true;
         options.SlidingExpiration = true;
+        options.ExpireTimeSpan = TimeSpan.FromDays(1);
         options.Cookie.SecurePolicy = Config.IsProd || Config.IsStaging ? CookieSecurePolicy.Always : CookieSecurePolicy.SameAsRequest;
-        options.ExpireTimeSpan = TimeSpan.FromMinutes(builder.Configuration.GetSection("CookiesSettings").GetValue<int>("ExpirationMinutes"));
         options.Events.OnRedirectToLogin = context =>
         {
             context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
