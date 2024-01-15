@@ -1,16 +1,16 @@
-﻿using HelpersCommon.Logger;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 
 namespace HelpersCommon.Scheduler
 {
     public class SchedulerHostedService : BackgroundService
     {
-        private readonly ILogger _logger;
+        private readonly ILogger<SchedulerHostedService> _logger;
         private readonly IServiceProvider _serviceProvider;
 
-        public SchedulerHostedService(ILogger logger, IServiceProvider serviceProvider)
+        public SchedulerHostedService(ILogger<SchedulerHostedService> logger, IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider;
             _logger = logger;
@@ -54,12 +54,12 @@ namespace HelpersCommon.Scheduler
                             {
                                 var ex = $"Task {task.TaskType.Name} was canceled by the elapsed time, {TimeCancel}: ";
                                 Debug.WriteLine(ex.ToString());
-                                _logger.AddError(ex.ToString());
+                                _logger.LogError(ex.ToString());
                             }
                             catch (Exception ex)
                             {
                                 Debug.WriteLine(ex.ToString());
-                                _logger.AddError($"Task {task.TaskType.Name} have error: " + ex.ToString(), ex);
+                                _logger.LogError($"Task {task.TaskType.Name} have error: " + ex.ToString(), ex);
                             }
                             finally
                             {
@@ -73,7 +73,7 @@ namespace HelpersCommon.Scheduler
                     Debug.WriteLine(ex.ToString());
                     try
                     {
-                        _logger.AddError("Error from scheduler: " + ex.ToString());
+                        _logger.LogError("Error from scheduler: " + ex.ToString());
                     }
                     catch { }
                 }

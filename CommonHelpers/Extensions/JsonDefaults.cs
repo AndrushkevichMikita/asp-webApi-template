@@ -10,8 +10,7 @@ namespace HelpersCommon.Extensions
     {
         public static JsonSerializerOptions Defaults { get; } = new JsonSerializerOptions
         {
-
-            IgnoreNullValues = true,
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull, // instead of obsolete IgnoreNullValues = true in .net 5
             PropertyNameCaseInsensitive = true,
             ReadCommentHandling = JsonCommentHandling.Skip,
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -23,9 +22,9 @@ namespace HelpersCommon.Extensions
             builder
                 .AddJsonOptions(options =>
                 {
-                    options.JsonSerializerOptions.IgnoreNullValues = Defaults.IgnoreNullValues;
-                    options.JsonSerializerOptions.PropertyNameCaseInsensitive = Defaults.PropertyNameCaseInsensitive;
                     options.JsonSerializerOptions.ReadCommentHandling = Defaults.ReadCommentHandling;
+                    options.JsonSerializerOptions.DefaultIgnoreCondition = Defaults.DefaultIgnoreCondition;
+                    options.JsonSerializerOptions.PropertyNameCaseInsensitive = Defaults.PropertyNameCaseInsensitive;
                     foreach (var c in Defaults.Converters)
                     {
                         options.JsonSerializerOptions.Converters.Add(c);

@@ -11,7 +11,6 @@ services:
         UseDb: "4" # docker env
         ASPNETCORE_ENVIRONMENT: "Production"
         DOTNET_DockerDb: "Server=ms-sql-server,1433;Database=webapi;User=SA;Password=Passw0rd123;MultipleActiveResultSets=True;TrustServerCertificate=True;"
-
   ms-sql-server:
     image: mcr.microsoft.com/mssql/server:2017-latest-ubuntu
     ports:
@@ -22,5 +21,34 @@ services:
         MSSQL_PID: Express
     volumes:
       - db_data:/var/opt/mssql
+  elasticsearch:
+    container_name: elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.9.2
+    ports:
+     - 9200:9200
+    volumes:
+     - elasticsearch-data:/usr/share/elasticsearch/data
+    environment:
+     - xpack.monitoring.enabled=true
+     - xpack.watcher.enabled=false
+     - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+     - discovery.type=single-node
+    networks:
+     - elastic
+  kibana:
+    container_name: kibana
+    image: docker.elastic.co/kibana/kibana:7.9.2
+    ports:
+     - 5601:5601
+    depends_on:
+     - elasticsearch
+    environment:
+     - ELASTICSEARCH_URL=http://localhost:9200
+    networks:
+     - elastic
+networks:
+  elastic:
+    driver: bridge
 volumes:
   db_data:
+  elasticsearch-data:  

@@ -1,22 +1,18 @@
 using ApplicationCore;
-using ApplicationCore.Entities;
-using ApplicationCore.Interfaces;
 using ApplicationCore.Models;
 using CommonHelpers;
+using CommonHelpers.Swagger;
 using DAL;
 using HelpersCommon.ControllerExtensions;
 using HelpersCommon.ExceptionHandler;
 using HelpersCommon.Extensions;
 using HelpersCommon.FiltersAndAttributes;
-using HelpersCommon.Logger;
 using HelpersCommon.PipelineExtensions;
 using HelpersCommon.Scheduler;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.OpenApi.Models;
-using System.Data;
+using Microsoft.AspNetCore.HttpLogging;
 using System.Net;
+using System.Reflection;
 using System.Text;
 
 try
@@ -28,21 +24,25 @@ try
         x.Limits.KeepAliveTimeout = TimeSpan.FromMinutes(30);
         x.Limits.MaxRequestBodySize = 2 * Config.MaxRequestSizeBytes; // the real limitations see in Startup...FormOptions // https://github.com/dotnet/aspnetcore/issues/20369
     });
-
     // applying appsettings
     builder.Configuration.ApplyConfiguration();
+    // configure Serilog + Elasticsearch as sink for Serilog
+    builder.Host.ConfigureSerilog(builder.Configuration);
 
     builder.Services.AddScheduler(new List<SchedulerItem>
     {
         // new SchedulerItem { TaskType = typeof(SomeName) }, // WARN: It's example of registration
     });
 
+    builder.Services.Configure<SMTPSettings>(builder.Configuration.GetSection(SMTPSettings.SMTP));
+
     builder.Services.AddCommonServices();
+
     builder.Services.AddApplicationServices();
+
     builder.Services.AddInfrastructureServices(builder.Configuration);
 
-    builder.Services.Configure<SMTPSettings>(builder.Configuration.GetSection(SMTPSettings.SMTP));
-    builder.Services.Configure<LoggerSettings>(builder.Configuration.GetSection(LoggerSettings.Logger));
+    builder.Services.AddSwagger();
 
     builder.Services.AddHealthChecks();
 
@@ -52,12 +52,8 @@ try
         options.EnableForHttps = false;
     });
 
-    builder.Services.AddSwaggerGen(c =>
-    {
-        c.SwaggerDoc("v1", new OpenApiInfo { Title = "asp-web-api template" });
-    });
-
     builder.Services.AddSession();
+
     builder.Services.AddDistributedMemoryCache();
 
     builder.Services.ConfigureApplicationCookie(options =>
@@ -98,7 +94,11 @@ try
 
     builder.Services.AddHttpContextAccessor();
 
+    builder.Services.AddHttpLogging(o => { o.LoggingFields = HttpLoggingFields.All; });
+
     var app = builder.Build();
+
+    app.UseHttpLogging();
 
     // Configure the HTTP request pipeline.
     if (app.Environment.IsDevelopment())
@@ -107,31 +107,18 @@ try
         app.UseHsts();  // The default HSTS value is 30 days.
 
     app.UseHttpsRedirection();
+
     app.UseRouting();
 
-    if (!Config.IsProd)
-    {
-        app.UseSwagger(c =>
-        {
-            c.RouteTemplate = "api/{documentname}/swagger.json";
-        });
-        // Enable middleware to serve swagger-ui (HTML, JS, CSS, etc.),
-        // specifying the Swagger JSON endpoint.
-        app.UseSwaggerUI(c =>
-        {
-            c.SwaggerEndpoint("/api/v1/swagger.json", "asp-web-api template");
-            c.RoutePrefix = "api";
-        });
-    }
+    app.UseSwagger();
 
     app.UseAuthentication();
+
     app.UseAuthorization();
+
     app.UseSession();
 
-    // logger
-    var l = app.Services.GetRequiredService<HelpersCommon.Logger.ILogger>(); // WARN: can get it without new scope because it singleton
-    app.LogRequestAndResponse(l);
-    app.RegisterExceptionAndLog(l);
+    app.HandleExceptions();
 
     app.UseResponseCaching();
     app.UseResponseCompression();
@@ -172,28 +159,19 @@ try
                  .RequireAuthorization(nameof(MinPermissionHandler));
     });
 
-    var scope = app.Services.CreateScope().ServiceProvider;
-    if (!builder.Configuration.GetValue<bool>("IsInMemoryDb")) scope.GetRequiredService<IApplicationDbContext>().ProvideContext().Database.Migrate();
-    // adding roles
-    var roleManager = scope.GetRequiredService<RoleManager<IdentityRole<int>>>();
-    foreach (var role in Enum.GetNames(typeof(RoleEnum)))
-        if (!await roleManager.RoleExistsAsync(role))
-            await roleManager.CreateAsync(new IdentityRole<int> { Name = role });
+    await app.Services.ApplyDbMigrations(builder.Configuration);
 
     app.Run();
 }
 catch (Exception ex)
 {
     var builder = WebApplication.CreateBuilder(args);
-    builder.Services.AddSingleton<HelpersCommon.Logger.ILogger, Logger>();
-
     var app = builder.Build();
-    Logger.ErrorCriticalSync("Error during SetupHost", ex);
+    var logger = app.Services.GetRequiredService<ILogger<WebApplication>>();
+    logger.LogCritical($"Failed to start {Assembly.GetExecutingAssembly().GetName().Name}", ex);
     app.Run(async (context) =>
     {
-        var str = new StringBuilder();
-        Logger.ErrorsInMemory.Select(item => item).Reverse().ToList().ForEach(c => str.AppendLine(c.Message));
-        await context.Response.WriteAsync(str.ToString());
+        await context.Response.WriteAsync(ex.Message + Environment.NewLine + ex.StackTrace);
     });
     app.Run();
 }

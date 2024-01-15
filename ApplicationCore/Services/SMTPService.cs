@@ -1,7 +1,6 @@
 ﻿using ApplicationCore.Interfaces;
 using ApplicationCore.Models;
 using HelpersCommon.ExceptionHandler;
-using HelpersCommon.Logger;
 using Microsoft.Extensions.Options;
 using System.Net.Mail;
 
@@ -9,13 +8,11 @@ namespace ApplicationCore.Services
 {
     public class SMTPService : ISMTPService
     {
-        private readonly ILogger _logger;
         private readonly SMTPSettings _settings;
 
-        public SMTPService(IOptions<SMTPSettings> smtp, ILogger logger)
+        public SMTPService(IOptions<SMTPSettings> smtp)
         {
             _settings = smtp.Value;
-            _logger = logger;
         }
 
         public async Task SendAsync(string destination, string subject, string body)
@@ -38,7 +35,6 @@ namespace ApplicationCore.Services
             {
                 if (ex.StatusCode == SmtpStatusCode.MailboxUnavailable)
                 {
-                    _logger.AddError(ex);
                     throw new MyApplicationException(ErrorStatus.NotFound, $"Mailbox [{destination}] unavailable");
                 }
                 throw new MyApplicationException(ErrorStatus.InvalidData, "EmailService. Send: ", ex);

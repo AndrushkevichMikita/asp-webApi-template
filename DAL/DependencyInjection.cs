@@ -38,7 +38,6 @@ namespace DAL
 
                     options.UseSqlServer(connection);
                 }
-
             });
 
             services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
@@ -62,6 +61,22 @@ namespace DAL
             services.AddDatabaseDeveloperPageExceptionFilter();
 #endif
             return services;
+        }
+
+        public static async Task ApplyDbMigrations(this IServiceProvider servicesProvider, IConfiguration configuration)
+        {
+            var scope = servicesProvider.CreateScope().ServiceProvider;
+            if (!configuration.GetValue<bool>("IsInMemoryDb"))
+            {
+                var db = scope.GetRequiredService<IApplicationDbContext>().ProvideContext().Database;
+                if ((await db.GetPendingMigrationsAsync()).Any())
+                    await db.MigrateAsync();
+            }
+            // adding roles
+            var roleManager = scope.GetRequiredService<RoleManager<IdentityRole<int>>>();
+            foreach (var role in Enum.GetNames(typeof(RoleEnum)))
+                if (!await roleManager.RoleExistsAsync(role))
+                    await roleManager.CreateAsync(new IdentityRole<int> { Name = role });
         }
     }
 
