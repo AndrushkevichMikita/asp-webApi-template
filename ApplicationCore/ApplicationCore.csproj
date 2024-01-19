@@ -17,9 +17,4 @@
     <ProjectReference Include="..\CommonHelpers\CommonHelpers.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Account\Queries\" />
-    <Folder Include="Common\Behaviours\" />
-  </ItemGroup>
-
 </Project>

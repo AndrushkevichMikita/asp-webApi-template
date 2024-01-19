@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace DAL.Migrations
+namespace Infrastructure.Migrations
 {
     public partial class initial : Migration
     {

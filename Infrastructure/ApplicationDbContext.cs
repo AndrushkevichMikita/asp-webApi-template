@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 
-namespace DAL
+namespace Infrastructure
 {
     public class ApplicationDbContext : IdentityDbContext<UserEntity,
                                         IdentityRole<int>,

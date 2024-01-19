@@ -1,8 +1,8 @@
 ﻿using ApplicationCore.Entities;
 using ApplicationCore.Interfaces;
 using CommonHelpers;
-using DAL.Interceptors;
 using HelpersCommon.ExceptionHandler;
+using Infrastructure.Interceptors;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace DAL
+namespace Infrastructure
 {
     public static class DependencyInjection
     {

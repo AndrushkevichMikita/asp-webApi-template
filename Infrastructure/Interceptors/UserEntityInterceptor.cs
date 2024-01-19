@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 
-namespace DAL.Interceptors
+namespace Infrastructure.Interceptors
 {
     public class UserEntityInterceptor : SaveChangesInterceptor
     {
