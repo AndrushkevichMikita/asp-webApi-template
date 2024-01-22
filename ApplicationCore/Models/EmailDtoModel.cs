@@ -1,6 +1,6 @@
 ﻿namespace ApplicationCore.Models
 {
-    public class EmailModel
+    public class EmailDtoModel
     {
         public string DigitCode { get; set; }
         public string UserEmail { get; set; }

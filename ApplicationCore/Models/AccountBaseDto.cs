@@ -3,14 +3,11 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ApplicationCore.Models
 {
-    public class AccountModel
+    public class AccountBaseDto
     {
         [Required]
         [EmailAddress]
         public string Email { get; set; }
-
-        [Required]
-        public string Password { get; set; }
 
         [Required]
         public string FirstName { get; set; }
@@ -18,7 +15,7 @@ namespace ApplicationCore.Models
         [Required]
         public string LastName { get; set; }
 
+        [Required]
         public RoleEnum Role { get; set; }
-        public bool? RememberMe { get; set; }
     }
 }

@@ -39,7 +39,7 @@ namespace ApplicationCore.Services
                    .ReplaceFirst("{linkDisplay}", string.IsNullOrEmpty(linkText) ? "none" : "initial");
         }
 
-        public async Task SendDigitCodeAsync(EmailModel model)
+        public async Task SendDigitCodeAsync(EmailDtoModel model)
         {
             var html = await GetBaseTemplate(
                        name: $"{model.FirstName} {model.LastName}",
@@ -52,7 +52,7 @@ namespace ApplicationCore.Services
 
         private static ParallelOptions _parallelOptions = new() { MaxDegreeOfParallelism = 2 };
 
-        public async Task SendDigitCodeParallelAsync(List<EmailModel> models)
+        public async Task SendDigitCodeParallelAsync(List<EmailDtoModel> models)
         {
             await Parallel.ForEachAsync(models, _parallelOptions, async (model, token) => await SendDigitCodeAsync(model));
         }

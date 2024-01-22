@@ -1,28 +1,45 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
 namespace CommonHelpers
 {
-    public class CookieUser
+    public class CookieUser<T> where T : struct
     {
         public int Id { get; set; }
+        public T Role { get; set; }
+        public string Email { get; set; }
     }
 
-    public class BaseController : ControllerBase
+    [Authorize]
+    [ApiController]
+    [Route("api/[controller]")]
+    [Produces("application/json")]
+    public abstract class BaseController<T> : ControllerBase where T : struct
     {
-        private CookieUser? _user;
+        private CookieUser<T>? _user;
 
-        public CookieUser CurrentUser
+        public CookieUser<T> CurrentUser
         {
             get
             {
-                if (_user is not null)
-                    return _user;
-
-                _user = new CookieUser
+                if (_user is null)
                 {
-                    Id = Convert.ToInt32(User?.Claims?.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier)?.Value ?? "0"),
-                };
+                    var i = (User?.Identity as ClaimsIdentity).Claims;
+
+                    var id = i.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier)?.Value;
+                    var role = i.FirstOrDefault(x => x.Type == ClaimTypes.Role)?.Value;
+                    var email = i.FirstOrDefault(x => x.Type == ClaimTypes.Email)?.Value;
+
+                    if (!string.IsNullOrWhiteSpace(id))
+                        _user = new CookieUser<T>
+                        {
+                            Email = email!,
+                            Id = int.Parse(id),
+                            Role = Enum.Parse<T>(role!),
+                        };
+                }
+
                 return _user;
             }
         }

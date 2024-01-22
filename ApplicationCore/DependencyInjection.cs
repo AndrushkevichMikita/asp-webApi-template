@@ -13,6 +13,7 @@ namespace ApplicationCore
             services.AddScoped<IAccountService, AccountService>();
             services.AddScoped<IEmailTemplateService, EmailTemplateService>();
             services.AddScoped(typeof(IRepo<>), typeof(RepositoryBase<>));
+            services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
             return services;
         }
     }

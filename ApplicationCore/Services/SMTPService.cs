@@ -1,5 +1,5 @@
-﻿using ApplicationCore.Interfaces;
-using ApplicationCore.Models;
+﻿using ApplicationCore.Configuration;
+using ApplicationCore.Interfaces;
 using HelpersCommon.ExceptionHandler;
 using Microsoft.Extensions.Options;
 using System.Net.Mail;

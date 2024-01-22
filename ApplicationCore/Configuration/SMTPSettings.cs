@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace ApplicationCore.Models
+namespace ApplicationCore.Configuration
 {
     public class SMTPSettings
     {

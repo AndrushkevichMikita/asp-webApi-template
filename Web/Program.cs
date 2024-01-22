@@ -1,5 +1,5 @@
 using ApplicationCore;
-using ApplicationCore.Models;
+using ApplicationCore.Configuration;
 using CommonHelpers;
 using CommonHelpers.Swagger;
 using HelpersCommon.ControllerExtensions;
@@ -41,6 +41,8 @@ try
     builder.Services.AddApplicationServices();
 
     builder.Services.AddInfrastructureServices(builder.Configuration);
+
+    builder.Services.AddRouting(options => options.LowercaseUrls = true);
 
     builder.Services.AddSwagger();
 
@@ -155,7 +157,7 @@ try
             });
         }
         endpoints.MapControllers()
-                 .RequireAuthorization(new AuthorizeAttribute()) // WARN: Enables global [Authorize] attribute for each controller
+                 //.RequireAuthorization(new AuthorizeAttribute()) // WARN: Enables global [Authorize] attribute for each controller
                  .RequireAuthorization(nameof(MinPermissionHandler));
     });
 

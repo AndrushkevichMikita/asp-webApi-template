@@ -2,6 +2,7 @@
 using ApplicationCore.Interfaces;
 using ApplicationCore.Models;
 using ApplicationCore.Repository;
+using AutoMapper;
 using HelpersCommon.ExceptionHandler;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -14,16 +15,22 @@ namespace ApplicationCore.Services
         private readonly IEmailTemplateService _emailTemplateService;
         private readonly SignInManager<UserEntity> _signManager;
         private readonly UserManager<UserEntity> _manager;
+        private readonly IRepo<UserEntity> _userRepo;
+        private readonly IMapper _mapper;
 
         public AccountService(IEmailTemplateService emailTemplateService,
                               IRepo<IdentityUserTokenEntity> userTokenRepo,
                               SignInManager<UserEntity> signManager,
-                              UserManager<UserEntity> manager)
+                              UserManager<UserEntity> manager,
+                              IRepo<UserEntity> userRepo,
+                              IMapper mapper)
         {
             _emailTemplateService = emailTemplateService;
             _userTokenRepo = userTokenRepo;
             _signManager = signManager;
+            _userRepo = userRepo;
             _manager = manager;
+            _mapper = mapper;
         }
 
         private static string GenerateCode()
@@ -45,29 +52,31 @@ namespace ApplicationCore.Services
             return existingUser;
         }
 
-        public async Task SignIn(AccountModel model)
+        public Task SignOut()
+            => _signManager.SignOutAsync();
+
+        public async Task SignIn(AccountSignInDto model)
         {
             var appUser = await _manager.FindByEmailAsync(model.Email) ?? throw new MyApplicationException(ErrorStatus.NotFound, "User not found");
-            var res = await _signManager.PasswordSignInAsync(appUser, model.Password, false, false);
-            if (!res.Succeeded || await _manager.IsEmailConfirmedAsync(appUser)!) throw new MyApplicationException(ErrorStatus.InvalidData, "Password or user invalid");
+            var res = await _signManager.PasswordSignInAsync(appUser, model.Password, model.RememberMe ?? false, false);
+            if (!res.Succeeded || !await _manager.IsEmailConfirmedAsync(appUser)) throw new MyApplicationException(ErrorStatus.InvalidData, "Password or user invalid");
         }
 
-        public async Task SignUp(AccountModel model)
+        public async Task SignUp(AccountSignInDto model)
         {
             await DeleteSameNotConfirmed(model.Email);
 
-            var toInsert = new UserEntity
-            {
-                Role = model.Role,
-                Email = model.Email,
-                LastName = model.LastName,
-                FirstName = model.FirstName,
-                UserName = model.FirstName + " " + model.LastName,
-            };
-
+            var toInsert = _mapper.Map<UserEntity>(model);
             var res = await _manager.CreateAsync(toInsert, model.Password);
             if (!res.Succeeded) throw new MyApplicationException(ErrorStatus.InvalidData, string.Join(" ", res.Errors.Select(c => c.Description)));
             await _manager.AddToRoleAsync(toInsert, toInsert.Role.ToString());
+        }
+
+        public async Task<AccountBaseDto?> GetCurrent(int userId)
+        {
+            var user = await _userRepo.GetIQueryable().FirstOrDefaultAsync(x => x.Id == userId);
+            if (user is null) return null;
+            return _mapper.Map<AccountBaseDto>(user);
         }
 
         public async Task SendDigitCodeByEmail(string email)
@@ -90,7 +99,7 @@ namespace ApplicationCore.Services
                 Value = await _manager.GenerateEmailConfirmationTokenAsync(appUser)
             }, true);
 
-            await _emailTemplateService.SendDigitCodeParallelAsync(new List<EmailModel>{new  EmailModel
+            await _emailTemplateService.SendDigitCodeParallelAsync(new List<EmailDtoModel>{new  EmailDtoModel
             {
                 UserEmail = appUser.Email,
                 DigitCode = digitCode,
@@ -115,6 +124,14 @@ namespace ApplicationCore.Services
                 throw new MyApplicationException(ErrorStatus.InvalidData, result.Errors.FirstOrDefault()!.Description);
 
             await _userTokenRepo.DeleteAsync(token, true);
+        }
+
+        public async Task Delete(string password, int accountId)
+        {
+            var account = await _manager.FindByIdAsync(accountId.ToString());
+            var res = await _manager.CheckPasswordAsync(account, password);
+            if (!res) throw new MyApplicationException(ErrorStatus.InvalidData, "Password invalid");
+            await _manager.DeleteAsync(account);
         }
     }
 }
