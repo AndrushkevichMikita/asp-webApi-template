@@ -10,7 +10,7 @@ WORKDIR /src
 COPY ["Web/Web.csproj", "Web/"]
 COPY ["ApplicationCore/ApplicationCore.csproj", "ApplicationCore/"]
 COPY ["CommonHelpers/CommonHelpers.csproj", "CommonHelpers/"]
-COPY ["DAL/DAL.csproj", "DAL/"]
+COPY ["Infrastructure/Infrastructure.csproj", "Infrastructure/"]
 RUN dotnet restore "Web/Web.csproj"
 COPY . .
 WORKDIR "/src/Web"

@@ -7,6 +7,8 @@ services:
       dockerfile: Web\Dockerfile
     ports:
         - "8080:80"
+    networks:
+        - elastic
     environment:
         UseDb: "4" # docker env
         ASPNETCORE_ENVIRONMENT: "Production"
@@ -15,6 +17,8 @@ services:
     image: mcr.microsoft.com/mssql/server:2017-latest-ubuntu
     ports:
         - "1453:1433"
+    networks:
+        - elastic
     environment:
         ACCEPT_EULA: "Y"
         SA_PASSWORD: Passw0rd123
@@ -31,6 +35,8 @@ services:
     environment:
      - xpack.monitoring.enabled=true
      - xpack.watcher.enabled=false
+     - cluster.name=docker-cluster
+     - xpack.security.enabled=false
      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
      - discovery.type=single-node
     networks:
@@ -43,7 +49,7 @@ services:
     depends_on:
      - elasticsearch
     environment:
-     - ELASTICSEARCH_URL=http://localhost:9200
+     - ELASTICSEARCH_URL=http://elasticsearch:9200
     networks:
      - elastic
 networks:
