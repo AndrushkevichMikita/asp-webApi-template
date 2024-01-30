@@ -10,16 +10,6 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="EFCore.BulkExtensions" Version="6.0.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="6.0.22" />
-    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="6.0.22" />
-    <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="6.0.22" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="6.0.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="6.0.22" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="6.0.22" />
-    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.19.4" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\ApplicationCore\ApplicationCore.csproj" />
     <ProjectReference Include="..\CommonHelpers\CommonHelpers.csproj" />
     <ProjectReference Include="..\Infrastructure\Infrastructure.csproj" />

@@ -18,8 +18,10 @@ namespace CommonHelpers
     public abstract class BaseController<T> : ControllerBase where T : struct
     {
         private CookieUser<T>? _user;
-
-        public CookieUser<T> CurrentUser
+        /// <summary>
+        /// Return current authenticated user
+        /// </summary>
+        public CookieUser<T>? CurrentUser
         {
             get
             {

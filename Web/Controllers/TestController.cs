@@ -10,7 +10,7 @@ namespace asp_web_api_template.Controllers
     public class TestController : BaseController<RoleEnum>
     {
         [AllowAnonymous]
-        [HttpPost("api/diag/errors")]
+        [HttpPost("/fireError")]
         public void FireError()
         {
             throw new MyApplicationException(ErrorStatus.NotFound, "Invalid Data");
