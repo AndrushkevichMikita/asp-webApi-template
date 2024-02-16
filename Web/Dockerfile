@@ -14,6 +14,7 @@ COPY ["Infrastructure/Infrastructure.csproj", "Infrastructure/"]
 RUN dotnet restore "Web/Web.csproj"
 COPY . .
 WORKDIR "/src/Web"
+RUN dotnet test /src/Tests
 RUN dotnet build "Web.csproj" -c Release -o /app/build
 
 FROM build AS publish
