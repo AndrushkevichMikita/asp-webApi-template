@@ -7,7 +7,7 @@ services:
       context: .
       dockerfile: Web/Dockerfile
     ports:
-        - "8090:80"
+        - "8080:80"
     networks:
         - elastic
     environment:
