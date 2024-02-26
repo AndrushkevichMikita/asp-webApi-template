@@ -1,6 +1,7 @@
 version: '3.4'
 
 services:
+ 
   web:
     image: ${DOCKER_REGISTRY-}web
     build:
@@ -14,6 +15,7 @@ services:
         UseDb: "4" # docker env
         ASPNETCORE_ENVIRONMENT: "Production"
         DOTNET_DockerDb: "Server=ms-sql-server,1433;Database=webapi;User=SA;Password=Passw0rd123;MultipleActiveResultSets=True;TrustServerCertificate=True;"
+
   ms-sql-server:
     image: mcr.microsoft.com/mssql/server:2017-latest-ubuntu
     ports:
@@ -26,36 +28,78 @@ services:
         MSSQL_PID: Express
     volumes:
       - db_data:/var/opt/mssql
-  elasticsearch:
-    container_name: elasticsearch
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.9.2
-    ports:
-     - 9200:9200
-    volumes:
-     - elasticsearch-data:/usr/share/elasticsearch/data
-    environment:
-     - xpack.monitoring.enabled=true
-     - xpack.watcher.enabled=false
-     - cluster.name=docker-cluster
-     - xpack.security.enabled=false
-     - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-     - discovery.type=single-node
-    networks:
-     - elastic
-  kibana:
-    container_name: kibana
-    image: docker.elastic.co/kibana/kibana:7.9.2
-    ports:
-     - 5601:5601
+
+  apm-server:
+    image: docker.elastic.co/apm/apm-server:7.9.3
     depends_on:
-     - elasticsearch
-    environment:
-     - ELASTICSEARCH_URL=http://elasticsearch:9200
+      elasticsearch:
+        condition: service_healthy
+      kibana:
+        condition: service_healthy
+    cap_add: ["CHOWN", "DAC_OVERRIDE", "SETGID", "SETUID"]
+    cap_drop: ["ALL"]
+    ports:
+    - 8200:8200
     networks:
-     - elastic
+    - elastic
+    command: >
+       apm-server -e
+         -E apm-server.rum.enabled=true
+         -E setup.kibana.host=kibana:5601
+         -E setup.template.settings.index.number_of_replicas=0
+         -E apm-server.kibana.enabled=true
+         -E apm-server.kibana.host=kibana:5601
+         -E output.elasticsearch.hosts=["elasticsearch:9200"]
+    healthcheck:
+      interval: 10s
+      retries: 12
+      test: curl --write-out 'HTTP %{http_code}' --fail --silent --output /dev/null http://localhost:8200/
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.9.3
+    environment:
+    - bootstrap.memory_lock=true
+    - cluster.name=docker-cluster
+    - cluster.routing.allocation.disk.threshold_enabled=false
+    - discovery.type=single-node
+    - ES_JAVA_OPTS=-XX:UseAVX=2 -Xms1g -Xmx1g
+    ulimits:
+      memlock:
+        hard: -1
+        soft: -1
+    volumes:
+    - esdata:/usr/share/elasticsearch/data
+    ports:
+    - 9200:9200
+    networks:
+    - elastic
+    healthcheck:
+      interval: 20s
+      retries: 10
+      test: curl -s http://localhost:9200/_cluster/health | grep -vq '"status":"red"'
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.9.3
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    environment:
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+    ports:
+    - 5601:5601
+    networks:
+    - elastic
+    healthcheck:
+      interval: 10s
+      retries: 20
+      test: curl --write-out 'HTTP %{http_code}' --fail --silent --output /dev/null http://localhost:5601/api/status
+
+volumes:
+  db_data:
+  esdata:
+    driver: local
+
 networks:
   elastic:
     driver: bridge
-volumes:
-  db_data:
-  elasticsearch-data:  

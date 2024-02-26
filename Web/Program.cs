@@ -10,7 +10,6 @@ using HelpersCommon.PipelineExtensions;
 using HelpersCommon.Scheduler;
 using Infrastructure;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.HttpLogging;
 using System.Net;
 using System.Reflection;
 using System.Text;
@@ -96,9 +95,9 @@ try
 
     builder.Services.AddHttpContextAccessor();
 
-    builder.Services.AddHttpLogging(o => { o.LoggingFields = HttpLoggingFields.All; });
-
     var app = builder.Build();
+
+    app.AddElasticApm(builder.Configuration);
 
     app.UseHttpLogging();
 

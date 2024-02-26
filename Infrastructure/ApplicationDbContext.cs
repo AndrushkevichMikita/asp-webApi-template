@@ -5,8 +5,6 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using Microsoft.Extensions.Logging;
-using System.Diagnostics;
 
 namespace Infrastructure
 {
@@ -32,9 +30,10 @@ namespace Infrastructure
             optionsBuilder.ConfigureWarnings(w => w.Throw(RelationalEventId.MultipleCollectionIncludeWarning));
 
             // logging the Command Execution
-            optionsBuilder.LogTo(message => Debug.WriteLine(message), LogLevel.Information)
-                          .EnableSensitiveDataLogging()
-                          .EnableDetailedErrors();
+            // Enable here on in Elastic Apm, otherwice messages will duplicates
+            // optionsBuilder.LogTo(message => Debug.WriteLine(message), LogLevel.Information)
+            //               .EnableSensitiveDataLogging()
+            //               .EnableDetailedErrors();
         }
 #endif
         protected override void OnModelCreating(ModelBuilder builder)
