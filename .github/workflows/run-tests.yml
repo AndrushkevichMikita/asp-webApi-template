@@ -20,6 +20,6 @@ jobs:
       - name: Build
         run: dotnet build --no-restore Web
       - name: Setup Docker
-        run: docker-compose up -d
+        run: docker-compose up
       - name: Test
         run: dotnet test Tests
