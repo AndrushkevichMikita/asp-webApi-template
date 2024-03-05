@@ -12,7 +12,7 @@ namespace Tests
         {
             protected override void ConfigureWebHost(IWebHostBuilder builder)
             {
-                Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
+                Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Production");
                 SchedulerExtension.StartWithMinuteBegin = false;
                 builder.ConfigureServices(services =>
                 {
@@ -22,7 +22,7 @@ namespace Tests
                     });
                     services.AddHostedService<SchedulerHostedService>();
                 });
-                builder.UseEnvironment("Development");
+                builder.UseEnvironment("Production");
             }
         }
 
