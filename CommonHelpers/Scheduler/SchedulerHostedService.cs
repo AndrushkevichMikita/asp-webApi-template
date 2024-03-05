@@ -10,7 +10,8 @@ namespace HelpersCommon.Scheduler
         private readonly ILogger<SchedulerHostedService> _logger;
         private readonly IServiceProvider _serviceProvider;
 
-        public SchedulerHostedService(ILogger<SchedulerHostedService> logger, IServiceProvider serviceProvider)
+        public SchedulerHostedService(ILogger<SchedulerHostedService> logger,
+                                      IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider;
             _logger = logger;
@@ -24,9 +25,12 @@ namespace HelpersCommon.Scheduler
             if (!await WaitForAppStartup(_serviceProvider.GetRequiredService<IHostApplicationLifetime>(), stoppingToken))
                 return;
 
-            // wait 60sec + adjust time to ...:00 sec
-            var sec = DateTime.UtcNow.Second;
-            await Task.Delay(TimeSpan.FromSeconds(60 + 60 - sec), stoppingToken);
+            if (SchedulerExtension.StartWithMinuteBegin)
+            {
+                // wait 60sec + adjust time to ...:00 sec
+                var sec = DateTime.UtcNow.Second;
+                await Task.Delay(TimeSpan.FromSeconds(60 + 60 - sec), stoppingToken);
+            }
 
             while (true)
             {
@@ -77,9 +81,12 @@ namespace HelpersCommon.Scheduler
                     }
                     catch { }
                 }
-                // adjust time to ...:00
-                var now = DateTime.UtcNow.Second;
-                await Task.Delay(TimeSpan.FromSeconds(60 - now), stoppingToken);
+                if (SchedulerExtension.StartWithMinuteBegin)
+                {
+                    // adjust time to ...:00
+                    var now = DateTime.UtcNow.Second;
+                    await Task.Delay(TimeSpan.FromSeconds(60 - now), stoppingToken);
+                }
             }
         }
 

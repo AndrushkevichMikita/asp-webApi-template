@@ -5,6 +5,7 @@ namespace HelpersCommon.Scheduler
     public static class SchedulerExtension
     {
         public static List<SchedulerItem> TaskList = new();
+        public static bool StartWithMinuteBegin;
 
         public static void AddScheduler(this IServiceCollection services, List<SchedulerItem> tasks)
         {
@@ -16,7 +17,7 @@ namespace HelpersCommon.Scheduler
         public static void SetTime(Type TaskType, DateTime newTime)
         {
             var task = TaskList.First(x => x.TaskType == TaskType);
-            task.CurrentTimeStart = new DateTime(Math.Min(task.CurrentTimeStart.Ticks, newTime.Ticks));
+            task.CurrentTimeStart = new DateTime(Math.Max(task.CurrentTimeStart.Ticks, newTime.Ticks));
         }
 
         public static void StopExec(Type TaskType, bool stop)
