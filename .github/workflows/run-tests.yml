@@ -17,6 +17,6 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore Tests
       - name: Setup Docker
-        run: docker-compose up
+        run: docker compose -f docker-compose.yml up -d --wait
       - name: Test
         run: dotnet test Tests
