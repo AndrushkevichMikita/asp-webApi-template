@@ -15,6 +15,8 @@ jobs:
         with:
           dotnet-version: 6.0.x
       - name: Restore dependencies
-        run: dotnet restore Web
-      - name: Exec Tests
-        run: node ./execForTests
+        run: dotnet restore Tests
+      - name: Setup Docker
+        run: docker-compose up
+      - name: Test
+        run: dotnet test Tests
