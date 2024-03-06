@@ -77,8 +77,8 @@ try
 
     builder.Services.AddAuthorization(options =>
     {
-        options.AddPolicy(nameof(MinPermissionHandler), new AuthorizationPolicyBuilder()
-               .AddRequirements(new MinPermissionRequirement())
+        options.AddPolicy(nameof(IsUserLockedAuthHandler), new AuthorizationPolicyBuilder()
+               .AddRequirements(new UserNotLockedRequirement())
                .Build());
     });
 
@@ -157,7 +157,7 @@ try
         }
         endpoints.MapControllers()
                  //.RequireAuthorization(new AuthorizeAttribute()) // WARN: Enables global [Authorize] attribute for each controller
-                 .RequireAuthorization(nameof(MinPermissionHandler));
+                 .RequireAuthorization(nameof(IsUserLockedAuthHandler));
     });
 
     await app.Services.ApplyDbMigrations(builder.Configuration);

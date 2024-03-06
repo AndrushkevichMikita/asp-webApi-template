@@ -5,19 +5,19 @@ using System.Security.Claims;
 
 namespace HelpersCommon.ControllerExtensions
 {
-    public class MinPermissionRequirement : IAuthorizationRequirement { }
+    public class UserNotLockedRequirement : IAuthorizationRequirement { }
 
-    public class MinPermissionHandler : AuthorizationHandler<MinPermissionRequirement>
+    public class IsUserLockedAuthHandler : AuthorizationHandler<UserNotLockedRequirement>
     {
-        protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, MinPermissionRequirement requirement)
+        protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, UserNotLockedRequirement requirement)
         {
             //check if locked
             var subClaimLock = context.User?.Claims?.FirstOrDefault(x => x.Type == ClaimTypes.AuthorizationDecision);
             var subClaimId = context.User?.Claims?.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier);
             _ = int.TryParse(subClaimId?.Value, out int userId);
-            _ = bool.TryParse(subClaimLock?.Value, out bool isLocked);
+            _ = DateTimeOffset.TryParse(subClaimLock?.Value, out DateTimeOffset lockoutEndDate);
 
-            if (subClaimLock != null && isLocked == true || LockedUsers.Users.TryGetValue(userId, out int id) && subClaimId != null)
+            if (subClaimLock != null && lockoutEndDate.UtcDateTime > DateTime.UtcNow || LockedUsers.Users.TryGetValue(userId, out int id) && subClaimId != null)
                 throw new MyApplicationException(ErrorStatus.Forbidden, "User is locked");
 
             context.Succeed(requirement);

@@ -10,6 +10,8 @@ using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using System.Security.Claims;
 
 namespace Infrastructure
 {
@@ -56,7 +58,8 @@ namespace Infrastructure
                 options.Lockout.MaxFailedAccessAttempts = 6;
             }).AddRoles<IdentityRole<int>>()
               .AddEntityFrameworkStores<ApplicationDbContext>()
-              .AddDefaultTokenProviders();
+              .AddDefaultTokenProviders()
+              .AddClaimsPrincipalFactory<CustomUserClaimsPrincipalFactory>();
 #if DEBUG
             services.AddDatabaseDeveloperPageExceptionFilter();
 #endif
@@ -77,6 +80,24 @@ namespace Infrastructure
             foreach (var role in Enum.GetNames(typeof(RoleEnum)))
                 if (!await roleManager.RoleExistsAsync(role))
                     await roleManager.CreateAsync(new IdentityRole<int> { Name = role });
+        }
+    }
+
+    public class CustomUserClaimsPrincipalFactory : UserClaimsPrincipalFactory<UserEntity, IdentityRole<int>>
+    {
+        public CustomUserClaimsPrincipalFactory(
+            UserManager<UserEntity> userManager,
+            RoleManager<IdentityRole<int>> roleManager,
+            IOptions<IdentityOptions> optionsAccessor)
+            : base(userManager, roleManager, optionsAccessor)
+        {
+        }
+
+        protected override async Task<ClaimsIdentity> GenerateClaimsAsync(UserEntity user)
+        {
+            var identity = await base.GenerateClaimsAsync(user);
+            identity.AddClaim(new Claim(ClaimTypes.AuthorizationDecision, user.LockoutEnabled ? (user.LockoutEnd?.UtcDateTime)?.ToString() ?? "" : ""));
+            return identity;
         }
     }
 

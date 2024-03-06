@@ -31,7 +31,7 @@ namespace CommonHelpers
         public static IServiceCollection AddCommonServices(this IServiceCollection services)
         {
             services.AddScoped<DiagAuthorizeFactoryAttribute>();
-            services.AddScoped<IAuthorizationHandler, MinPermissionHandler>();
+            services.AddScoped<IAuthorizationHandler, IsUserLockedAuthHandler>();
 
             services.AddHostedService<SchedulerHostedService>();
 

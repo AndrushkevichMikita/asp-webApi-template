@@ -10,7 +10,7 @@ namespace ApplicationCore.Entities
         public string LastName { get; set; }
         public RoleEnum Role { get; set; }
         public ICollection<IdentityUserTokenEntity> Tokens { get; set; }
-        public bool CheckLocked() => LockoutEnabled && LockoutEnd?.UtcDateTime > DateTime.UtcNow;
+        public bool IsLocked() => LockoutEnabled && LockoutEnd?.UtcDateTime > DateTime.UtcNow;
     }
 
     public enum RoleEnum
