@@ -20,8 +20,10 @@ services:
     container_name: apmserver
     image: docker.elastic.co/apm/apm-server:7.9.3
     depends_on:
-     - elasticsearch
-     - kibana
+      elasticsearch:
+        condition: service_healthy
+      kibana:
+        condition: service_healthy
     cap_add: ["CHOWN", "DAC_OVERRIDE", "SETGID", "SETUID"]
     cap_drop: ["ALL"]
     ports:
@@ -36,6 +38,10 @@ services:
          -E apm-server.kibana.enabled=true
          -E apm-server.kibana.host=kibana:5601
          -E output.elasticsearch.hosts=["elasticsearch:9200"]
+    healthcheck:
+      interval: 10s
+      retries: 12
+      test: curl --write-out 'HTTP %{http_code}' --fail --silent --output /dev/null http://localhost:8200/
       
   elasticsearch:
     container_name: elasticsearch
@@ -56,11 +62,16 @@ services:
     - 9200:9200
     networks:
     - elastic
+    healthcheck:
+      interval: 20s
+      retries: 10
+      test: curl -s http://localhost:9200/_cluster/health | grep -vq '"status":"red"'
 
   kibana:
     image: docker.elastic.co/kibana/kibana:7.9.3
     depends_on:
-     - elasticsearch
+      elasticsearch:
+        condition: service_healthy
     environment:
       ELASTICSEARCH_URL: http://elasticsearch:9200
       ELASTICSEARCH_HOSTS: http://elasticsearch:9200
@@ -68,6 +79,10 @@ services:
     - 5601:5601
     networks:
     - elastic
+    healthcheck:
+      interval: 10s
+      retries: 20
+      test: curl --write-out 'HTTP %{http_code}' --fail --silent --output /dev/null http://localhost:5601/api/status
 
 volumes:
   db_data:
