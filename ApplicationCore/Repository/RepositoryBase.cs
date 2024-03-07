@@ -22,7 +22,7 @@ namespace ApplicationCore.Repository
             if (!Config.IsDev && !Config.IsPreStaging) Context.Database.SetCommandTimeout(60);
         }
 
-        private DbSet<TEntity>? _dbSet;
+        private DbSet<TEntity> _dbSet;
         protected DbSet<TEntity> DbSet
         {
             get
@@ -58,7 +58,7 @@ namespace ApplicationCore.Repository
             return rtn.Entity;
         }
 
-        public virtual async Task<TList?> InsertAsync<TList>(TList entities, bool saveChanges = false, CancellationToken cancellationToken = default) where TList : IList<TEntity>
+        public virtual async Task<TList> InsertAsync<TList>(TList entities, bool saveChanges = false, CancellationToken cancellationToken = default) where TList : IList<TEntity>
         {
             await DbSet.AddRangeAsync(entities, cancellationToken);
 

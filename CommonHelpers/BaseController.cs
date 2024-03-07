@@ -18,11 +18,11 @@ namespace CommonHelpers
     [Produces("application/json")]
     public abstract class BaseController<T> : ControllerBase where T : Enum
     {
-        private CookieUser<T>? _user;
+        private CookieUser<T> _user;
         /// <summary>
         /// Return current authenticated user
         /// </summary>
-        public CookieUser<T>? CurrentUser
+        public CookieUser<T> CurrentUser
         {
             get
             {

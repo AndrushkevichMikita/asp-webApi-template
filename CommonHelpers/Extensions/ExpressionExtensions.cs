@@ -46,7 +46,7 @@ namespace HelpersCommon.Extensions
          Expression<Func<TSource, TResult>> predicate,
          Conditions condition,
          T1 Value,
-         object? Value2 = null
+         object Value2 = null
          )
         {
             var l = predicate.Body;

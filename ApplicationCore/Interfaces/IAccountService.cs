@@ -10,6 +10,6 @@ namespace ApplicationCore.Interfaces
         Task ConfirmDigitCode(string digitCode);
         Task SendDigitCodeByEmail(string email);
         Task Delete(string password, int accountId);
-        Task<AccountBaseDto?> GetCurrent(int userId);
+        Task<AccountBaseDto> GetCurrent(int userId);
     }
 }

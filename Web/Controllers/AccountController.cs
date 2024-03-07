@@ -67,7 +67,7 @@ namespace asp_web_api_template.Controllers
         /// <returns></returns>
         [AllowAnonymous]
         [HttpGet()]
-        public async Task<AccountBaseDto?> GetCurrent()
+        public async Task<AccountBaseDto> GetCurrent()
             => await _account.GetCurrent(CurrentUser.Id);
 
         /// <summary>

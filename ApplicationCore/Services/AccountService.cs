@@ -40,7 +40,7 @@ namespace ApplicationCore.Services
             return code;
         }
 
-        private async Task<UserEntity?> DeleteSameNotConfirmed(string email)
+        private async Task<UserEntity> DeleteSameNotConfirmed(string email)
         {
             var existingUser = await _manager.FindByEmailAsync(email);
             if (existingUser == null) return null;
@@ -72,7 +72,7 @@ namespace ApplicationCore.Services
             await _manager.AddToRoleAsync(toInsert, toInsert.Role.ToString());
         }
 
-        public async Task<AccountBaseDto?> GetCurrent(int userId)
+        public async Task<AccountBaseDto> GetCurrent(int userId)
         {
             var user = await _userRepo.GetIQueryable().FirstOrDefaultAsync(x => x.Id == userId);
             if (user is null) return null;
@@ -99,8 +99,7 @@ namespace ApplicationCore.Services
                 Value = await _manager.GenerateEmailConfirmationTokenAsync(appUser)
             }, true);
 
-            await _emailTemplateService.SendDigitCodeParallelAsync(new List<EmailDtoModel>{new  EmailDtoModel
-            {
+            await _emailTemplateService.SendDigitCodeParallelAsync(new List<EmailDtoModel>{new() {
                 UserEmail = appUser.Email,
                 DigitCode = digitCode,
                 FirstName = appUser.FirstName,

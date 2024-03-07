@@ -8,7 +8,7 @@ namespace HelpersCommon.Extensions
     /// </summary>
     public class FastCache<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>>, IDisposable // https://github.com/jitbit/FastCache
     {
-        private readonly ConcurrentDictionary<TKey, TtlValue> _dict = new ConcurrentDictionary<TKey, TtlValue>();
+        private readonly ConcurrentDictionary<TKey, TtlValue> _dict = new();
         private readonly Timer _cleanUpTimer;
 
         /// <summary>
@@ -66,7 +66,7 @@ namespace HelpersCommon.Extensions
         /// <returns>True if value exists, otherwise false</returns>
         public bool TryGet(TKey key, out TValue value)
         {
-            value = default(TValue);
+            value = default;
 
             if (!_dict.TryGetValue(key, out TtlValue ttlValue))
                 return false; //not found
@@ -181,6 +181,7 @@ namespace HelpersCommon.Extensions
         //IDispisable members
         private bool _disposedValue;
         public void Dispose() => Dispose(true);
+
         protected virtual void Dispose(bool disposing)
         {
             if (!_disposedValue)

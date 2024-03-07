@@ -9,7 +9,7 @@ namespace ApplicationCore.Repository
         void Dispose();
 
         Task<TEntity> InsertAsync(TEntity entity, bool saveChanges = false, CancellationToken cancellationToken = default);
-        Task<TList?> InsertAsync<TList>(TList entities, bool saveChanges = false, CancellationToken cancellationToken = default) where TList : IList<TEntity>;
+        Task<TList> InsertAsync<TList>(TList entities, bool saveChanges = false, CancellationToken cancellationToken = default) where TList : IList<TEntity>;
         Task DeleteAsync(TEntity entity, bool saveChanges = false, CancellationToken cancellationToken = default);
         Task DeleteAsync<TList>(TList items, bool saveChanges = false, bool offBulk = false, CancellationToken cancellationToken = default) where TList : IList<TEntity>;
         /// <summary>

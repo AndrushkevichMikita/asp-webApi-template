@@ -29,7 +29,7 @@ namespace HelpersCommon.PrimitivesExtensions
              => DateTime.SpecifyKind(toAdjust.AdjustDate(year, month, day, hour), DateTimeKind.Utc);
 
         /// <summary>
-        /// Minutes & seconds sets to 0
+        /// Minutes and seconds sets to 0
         /// </summary>
         public static DateTime AdjustDate(this DateTime toAdjust, int? year = null, int? month = null, int? day = null, int? hour = null)
             => new(year ?? toAdjust.Year,
@@ -76,7 +76,7 @@ namespace HelpersCommon.PrimitivesExtensions
             => TimeZoneInfo.ConvertTimeFromUtc(value, tz);
 
         /// <summary>
-        /// Convert Utc time to Est time. Adjust Est time if necessary & convert to Utc 
+        /// Convert Utc time to Est time. Adjust Est time if necessary and convert to Utc 
         /// </summary>
         /// <returns></returns>
         public static DateTime SetUtcTimeAsEstToUtc(this DateTime value, int? year = null, int? month = null, int? day = null, int? hour = null)
