@@ -1,21 +1,8 @@
+# Use this file to configure docker env. for tests executing
+# This file is used in github actions
 version: '3.4'
-
 services:
  
-  web:
-    image: ${DOCKER_REGISTRY-}web
-    build:
-      context: .
-      dockerfile: Web/Dockerfile
-    ports:
-        - "8080:80"
-    networks:
-        - elastic
-    environment:
-        UseDb: "4" # docker env
-        ASPNETCORE_ENVIRONMENT: "Production"
-        DOTNET_DockerDb: "Server=ms-sql-server,1433;Database=webapi;User=SA;Password=Passw0rd123;MultipleActiveResultSets=True;TrustServerCertificate=True;"
-
   ms-sql-server:
     image: mcr.microsoft.com/mssql/server:2017-latest-ubuntu
     ports:
@@ -33,10 +20,8 @@ services:
     container_name: apmserver
     image: docker.elastic.co/apm/apm-server:7.9.3
     depends_on:
-      elasticsearch:
-        condition: service_healthy
-      kibana:
-        condition: service_healthy
+     - elasticsearch
+     - kibana
     cap_add: ["CHOWN", "DAC_OVERRIDE", "SETGID", "SETUID"]
     cap_drop: ["ALL"]
     ports:
@@ -51,10 +36,6 @@ services:
          -E apm-server.kibana.enabled=true
          -E apm-server.kibana.host=kibana:5601
          -E output.elasticsearch.hosts=["elasticsearch:9200"]
-    healthcheck:
-      interval: 10s
-      retries: 12
-      test: curl --write-out 'HTTP %{http_code}' --fail --silent --output /dev/null http://localhost:8200/
       
   elasticsearch:
     container_name: elasticsearch
@@ -75,16 +56,11 @@ services:
     - 9200:9200
     networks:
     - elastic
-    healthcheck:
-      interval: 20s
-      retries: 10
-      test: curl -s http://localhost:9200/_cluster/health | grep -vq '"status":"red"'
 
   kibana:
     image: docker.elastic.co/kibana/kibana:7.9.3
     depends_on:
-      elasticsearch:
-        condition: service_healthy
+     - elasticsearch
     environment:
       ELASTICSEARCH_URL: http://elasticsearch:9200
       ELASTICSEARCH_HOSTS: http://elasticsearch:9200
@@ -92,10 +68,6 @@ services:
     - 5601:5601
     networks:
     - elastic
-    healthcheck:
-      interval: 10s
-      retries: 20
-      test: curl --write-out 'HTTP %{http_code}' --fail --silent --output /dev/null http://localhost:5601/api/status
 
 volumes:
   db_data:
