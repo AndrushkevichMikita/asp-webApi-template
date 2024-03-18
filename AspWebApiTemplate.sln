@@ -15,6 +15,15 @@ Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-co
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests", "Tests\Tests.csproj", "{6B46A791-3D17-464F-A956-87DF931634F1}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "K8S", "K8S", "{24FF1DD9-67F1-47D4-9B37-6C303A34DCCC}"
+	ProjectSection(SolutionItems) = preProject
+		K8S\api-deployment.yaml = K8S\api-deployment.yaml
+		K8S\local-pvc.yaml = K8S\local-pvc.yaml
+		K8S\elasticsearch-deployment.yaml = K8S\elasticsearch-deployment.yaml
+		K8S\ingress-deployment.yaml = K8S\ingress-deployment.yaml
+		K8S\msql-deployment.yaml = K8S\msql-deployment.yaml
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
