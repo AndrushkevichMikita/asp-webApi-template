@@ -1,7 +1,6 @@
 using ApplicationCore;
 using ApplicationCore.Configuration;
 using CommonHelpers;
-using CommonHelpers.Swagger;
 using HelpersCommon.ControllerExtensions;
 using HelpersCommon.ExceptionHandler;
 using HelpersCommon.Extensions;
@@ -10,6 +9,7 @@ using HelpersCommon.PipelineExtensions;
 using HelpersCommon.Scheduler;
 using Infrastructure;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.OpenApi.Models;
 using System.Net;
 using System.Reflection;
 using System.Text;
@@ -43,7 +43,28 @@ try
 
     builder.Services.AddRouting(options => options.LowercaseUrls = true);
 
-    builder.Services.AddSwagger();
+    builder.Services.AddSwaggerGen(c =>
+    {
+        c.SwaggerDoc("v1", new OpenApiInfo
+        {
+            Version = "v1",
+            Title = "API",
+            Description = "An ASP.NET Core Web API",
+            TermsOfService = new Uri("https://example.com/terms"),
+            Contact = new OpenApiContact
+            {
+                Name = "Example Contact",
+                Url = new Uri("https://example.com/contact")
+            },
+            License = new OpenApiLicense
+            {
+                Name = "Example License",
+                Url = new Uri("https://example.com/license")
+            }
+        });
+        var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+        c.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
+    });
 
     builder.Services.AddHealthChecks();
 
@@ -111,7 +132,20 @@ try
 
     app.UseRouting();
 
-    app.UseSwagger();
+    if (!Config.IsProd)
+    {
+        app.UseSwagger(c =>
+        {
+            c.RouteTemplate = "api/{documentname}/swagger.json";
+        });
+        // Enable middleware to serve swagger-ui (HTML, JS, CSS, etc.),
+        // specifying the Swagger JSON endpoint.
+        app.UseSwaggerUI(c =>
+        {
+            c.SwaggerEndpoint("/api/v1/swagger.json", "asp-web-api template");
+            c.RoutePrefix = "api";
+        });
+    }
 
     app.UseAuthentication();
 

@@ -23,12 +23,12 @@ namespace asp_web_api_template.Controllers
             => await _account.SignIn(model);
 
         [AllowAnonymous]
-        [HttpGet("digitCode")]
-        public async Task SendDigitCodeByEmail(string email)
+        [HttpPost("digitCode")]
+        public async Task SendDigitCodeByEmail([FromBody] string email)
             => await _account.SendDigitCodeByEmail(email);
 
         [AllowAnonymous]
-        [HttpPost("digitCode")]
+        [HttpPut("digitCode")]
         public async Task ConfirmDigitCode([FromBody] string code)
             => await _account.ConfirmDigitCode(code);
 

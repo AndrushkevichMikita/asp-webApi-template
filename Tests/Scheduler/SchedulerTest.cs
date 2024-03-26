@@ -1,14 +1,14 @@
 using HelpersCommon.Scheduler;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
-using Tests.Scheduler;
 
-namespace Tests
+namespace Tests.Scheduler
 {
-    public class SchedulerTest
+    public class SchedulerTest : BaseIntegrationTest
     {
-        private sealed class CustomWebApplicationFactory : WebApplicationFactory<Program>
+        public SchedulerTest(CustomWebApplicationFactory f) : base(f) { }
+
+        private sealed class ApplicationFactory : CustomWebApplicationFactory
         {
             protected override void ConfigureWebHost(IWebHostBuilder builder)
             {
@@ -27,10 +27,10 @@ namespace Tests
         }
 
         [Fact]
-        public async Task CheckScheduledTaskRun()
+        public async Task Should_Run_At_Least_Once()
         {
             // Arrange
-            await using var application = new CustomWebApplicationFactory();
+            await using var application = new ApplicationFactory();
             // Act
             application.CreateClient();
             // give background service some time to run

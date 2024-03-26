@@ -58,8 +58,9 @@ namespace ApplicationCore.Services
         public async Task SignIn(AccountSignInDto model)
         {
             var appUser = await _manager.FindByEmailAsync(model.Email) ?? throw new MyApplicationException(ErrorStatus.NotFound, "User not found");
+            if (!await _manager.IsEmailConfirmedAsync(appUser)) throw new MyApplicationException(ErrorStatus.InvalidData, "Email unconfirmed");
             var res = await _signManager.PasswordSignInAsync(appUser, model.Password, model.RememberMe ?? false, false);
-            if (!res.Succeeded || !await _manager.IsEmailConfirmedAsync(appUser)) throw new MyApplicationException(ErrorStatus.InvalidData, "Password or user invalid");
+            if (!res.Succeeded) throw new MyApplicationException(ErrorStatus.InvalidData, "Password or user invalid");
         }
 
         public async Task SignUp(AccountSignInDto model)
