@@ -4,10 +4,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Tests.Scheduler
 {
-    public class SchedulerTest : BaseIntegrationTest
+    public class SchedulerTest
     {
-        public SchedulerTest(CustomWebApplicationFactory f) : base(f) { }
-
         private sealed class ApplicationFactory : CustomWebApplicationFactory
         {
             protected override void ConfigureWebHost(IWebHostBuilder builder)
