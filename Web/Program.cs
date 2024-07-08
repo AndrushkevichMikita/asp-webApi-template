@@ -78,24 +78,6 @@ try
 
     builder.Services.AddDistributedMemoryCache();
 
-    builder.Services.ConfigureApplicationCookie(options =>
-    {
-        options.Cookie.HttpOnly = true;
-        options.SlidingExpiration = true;
-        options.ExpireTimeSpan = TimeSpan.FromDays(1);
-        options.Cookie.SecurePolicy = Config.IsProd || Config.IsStaging ? CookieSecurePolicy.Always : CookieSecurePolicy.SameAsRequest;
-        options.Events.OnRedirectToLogin = context =>
-        {
-            context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
-            return Task.CompletedTask;
-        };
-        options.Events.OnRedirectToAccessDenied = context =>
-        {
-            context.Response.StatusCode = (int)HttpStatusCode.Forbidden;
-            return Task.CompletedTask;
-        };
-    });
-
     builder.Services.AddAuthorization(options =>
     {
         options.AddPolicy(nameof(IsUserLockedAuthHandler), new AuthorizationPolicyBuilder()

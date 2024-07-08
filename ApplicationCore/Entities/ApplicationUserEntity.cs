@@ -2,10 +2,12 @@
 
 namespace ApplicationCore.Entities
 {
-    public class UserEntity : IdentityUser<int>
+    public class ApplicationUserEntity : IdentityUser<int>
     {
+        public string RefreshToken { get; set; }
         public DateTime Created { get; set; }
         public DateTime LastUpdated { get; set; }
+        public DateTime? RefreshTokenExpiryTime { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public RoleEnum Role { get; set; }

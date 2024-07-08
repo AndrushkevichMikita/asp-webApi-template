@@ -1,20 +1,51 @@
 ﻿using ApplicationCore.Entities;
 using ApplicationCore.Interfaces;
 using ApplicationCore.Models;
+using ApplicationCore.Services;
 using CommonHelpers;
 using HelpersCommon.FiltersAndAttributes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace asp_web_api_template.Controllers
 {
     public class AccountController : BaseController<RoleEnum>
     {
         private readonly IAccountService _account;
+        private readonly ApplicationSignInManager _applicationSignInManager;
 
-        public AccountController(IAccountService account)
+        public AccountController(IAccountService account, ApplicationSignInManager applicationSignInManager)
         {
             _account = account;
+            _applicationSignInManager = applicationSignInManager;
+        }
+
+        [AllowAnonymous]
+        [HttpPost("refreshToken")]
+        public async Task<IActionResult> RefreshToken([FromServices] IConfiguration configuration, [FromBody] RefreshTokenDtoModel model)
+        {
+            var tokenValidationParameters = ApplicationSignInManager.GetTokenValidationParameters(configuration);
+            tokenValidationParameters.ValidateLifetime = false; // WARN: Since token can be already expired
+
+            var principal = new JwtSecurityTokenHandler().ValidateToken(model.Token, tokenValidationParameters, out SecurityToken securityToken);
+            if (securityToken is not JwtSecurityToken jwtSecurityToken || !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
+            {
+                return Unauthorized();
+            }
+
+            var username = principal.Identity.Name;
+            var user = await _applicationSignInManager.UserManager.FindByNameAsync(username);
+
+            if (user == null || user.RefreshToken != model.RefreshToken || user.RefreshTokenExpiryTime <= DateTime.Now)
+            {
+                return Unauthorized();
+            }
+
+            var newToken = await _applicationSignInManager.GenerateJwtTokenAsync(user);
+            var newRefreshToken = await _applicationSignInManager.GenerateRefreshTokenAsync(user);
+            return Ok(new { token = newToken, refreshToken = newRefreshToken });
         }
 
         [AllowAnonymous]
@@ -65,7 +96,6 @@ namespace asp_web_api_template.Controllers
         /// Get current authenticated user
         /// </summary>
         /// <returns></returns>
-        [AllowAnonymous]
         [HttpGet()]
         public async Task<AccountBaseDto> GetCurrent()
             => await _account.GetCurrent(CurrentUser.Id);

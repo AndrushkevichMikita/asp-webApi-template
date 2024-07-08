@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Infrastructure
 {
-    public class ApplicationDbContext : IdentityDbContext<UserEntity,
+    public class ApplicationDbContext : IdentityDbContext<ApplicationUserEntity,
                                         IdentityRole<int>,
                                         int,
                                         IdentityUserClaim<int>,

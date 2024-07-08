@@ -27,7 +27,7 @@ namespace Tests.Account
 
         private async Task UpdateUserEmailConfirm(AccountSignInDto model, bool isConfirm)
         {
-            var userRepo = ServicesScope.ServiceProvider.GetRequiredService<IRepo<UserEntity>>();
+            var userRepo = ServicesScope.ServiceProvider.GetRequiredService<IRepo<ApplicationUserEntity>>();
             var user = await userRepo.GetIQueryable().FirstOrDefaultAsync(x => x.Email == model.Email);
             if (user is null) return;
             user!.EmailConfirmed = isConfirm;
