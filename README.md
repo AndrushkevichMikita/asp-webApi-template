@@ -5,6 +5,7 @@ Your dotnet SDK should be corresponding with project's SDK version
 Run from root of project
 
 Add migration =>  dotnet ef migrations add <name of migration> --startup-project Web --project Infrastructure
+
 Remove last migration =>  dotnet ef migrations remove --force  --startup-project Web --project Infrastructure
 
 # Docker
