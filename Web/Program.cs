@@ -9,6 +9,7 @@ using HelpersCommon.PipelineExtensions;
 using HelpersCommon.Scheduler;
 using Infrastructure;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.OpenApi.Models;
 using System.Net;
 using System.Reflection;
@@ -116,11 +117,16 @@ try
 
     builder.Services.AddHttpContextAccessor();
 
+    builder.Services.AddHttpLogging(logging =>
+    {
+        logging.LoggingFields = HttpLoggingFields.All;
+    });
+
     var app = builder.Build();
 
-    app.AddElasticApm(builder.Configuration);
-
     app.UseHttpLogging();
+
+    app.AddElasticApm(builder.Configuration);
 
     // Configure the HTTP request pipeline.
     if (app.Environment.IsDevelopment())

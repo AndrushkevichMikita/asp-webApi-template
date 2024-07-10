@@ -43,21 +43,20 @@ namespace CommonHelpers
         public static void ConfigureSerilog(this ConfigureHostBuilder host, IConfiguration configuration)
         {
             host.UseSerilog((ctx, lc) => lc
+                .ReadFrom.Configuration(configuration)
                 .Enrich.FromLogContext()
                 .Enrich.WithExceptionDetails()
                 .Enrich.WithMachineName()
-                .WriteTo.Debug()
+                .Enrich.WithElasticApmCorrelationInfo()
+                .Enrich.WithProperty("Environment", Config.Env)
                 .WriteTo.Console()
                 .WriteTo.File(@"Logs\log.txt", rollingInterval: RollingInterval.Day, retainedFileCountLimit: 31)
-                .Enrich.WithElasticApmCorrelationInfo()
                 .WriteTo.Elasticsearch(new ElasticsearchSinkOptions(new Uri(configuration["ElasticConfiguration:Uri"]))
                 {
                     AutoRegisterTemplate = true,
                     CustomFormatter = new EcsTextFormatter(),
                     IndexFormat = $"{Assembly.GetExecutingAssembly().GetName().Name.ToLower().Replace(".", "-")}-{Config.Env?.ToLower().Replace(".", "-")}-{DateTime.UtcNow:yyyy-MM}"
-                })
-                .Enrich.WithProperty("Environment", Config.Env)
-                .ReadFrom.Configuration(configuration));
+                }));
         }
     }
 }
