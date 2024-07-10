@@ -29,14 +29,13 @@ namespace asp_web_api_template.Controllers
             var tokenValidationParameters = ApplicationSignInManager.GetTokenValidationParameters(configuration);
             tokenValidationParameters.ValidateLifetime = false; // WARN: Since token can be already expired
 
-            var principal = new JwtSecurityTokenHandler().ValidateToken(model.Token, tokenValidationParameters, out SecurityToken securityToken);
+            _ = new JwtSecurityTokenHandler().ValidateToken(model.Token, tokenValidationParameters, out SecurityToken securityToken);
             if (securityToken is not JwtSecurityToken jwtSecurityToken || !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
             {
                 return Unauthorized();
             }
 
-            var username = principal.Identity.Name;
-            var user = await _applicationSignInManager.UserManager.FindByNameAsync(username);
+            var user = await _applicationSignInManager.UserManager.FindByIdAsync(CurrentUser.Id.ToString());
 
             if (user == null || user.RefreshToken != model.RefreshToken || user.RefreshTokenExpiryTime <= DateTime.Now)
             {
@@ -50,8 +49,11 @@ namespace asp_web_api_template.Controllers
 
         [AllowAnonymous]
         [HttpPost("signIn")]
-        public async Task SignIn(AccountSignInDto model)
-            => await _account.SignIn(model);
+        public async Task<IActionResult> SignIn(AccountSignInDto model)
+        {
+            var (token, refreshToken) = await _account.SignIn(model);
+            return Ok(new { token, refreshToken });
+        }
 
         [AllowAnonymous]
         [HttpPost("digitCode")]

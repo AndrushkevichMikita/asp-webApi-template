@@ -14,7 +14,6 @@ namespace ApplicationCore.Services
     public class ApplicationSignInManager : SignInManager<ApplicationUserEntity>
     {
         private readonly IConfiguration _configuration;
-        private readonly IHttpContextAccessor _contextAccessor;
         private readonly UserManager<ApplicationUserEntity> _userManager;
         private readonly ApplicationUserClaimsPrincipalFactory _applicationUserClaimsPrincipalFactory;
 
@@ -31,7 +30,6 @@ namespace ApplicationCore.Services
         {
             _userManager = userManager;
             _configuration = configuration;
-            _contextAccessor = contextAccessor;
             _applicationUserClaimsPrincipalFactory = applicationUserClaimsPrincipalFactory;
         }
 
@@ -42,12 +40,9 @@ namespace ApplicationCore.Services
 
             var claims = await _applicationUserClaimsPrincipalFactory.GenerateAdjustedClaimsAsync(user);
 
-            //var roles = await _userManager.GetRolesAsync(user);
-            //claims.AddRange(roles.Select(role => new Claim(ClaimsIdentity.DefaultRoleClaimType, role)));
-
             var token = new JwtSecurityToken(
                 issuer: _configuration["Jwt:Issuer"],
-                audience: _configuration["Jwt:Issuer"],
+                audience: _configuration["Jwt:Audience"],
                 claims: claims.Claims,
                 expires: DateTime.Now.AddMinutes(int.Parse(_configuration["Jwt:LifetimeMinutes"])),
                 signingCredentials: creds);
