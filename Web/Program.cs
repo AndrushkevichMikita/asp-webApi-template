@@ -1,17 +1,15 @@
 using ApplicationCore;
 using ApplicationCore.Configuration;
 using CommonHelpers;
-using HelpersCommon.ControllerExtensions;
+using HelpersCommon.CustomPolicy;
 using HelpersCommon.ExceptionHandler;
 using HelpersCommon.Extensions;
 using HelpersCommon.FiltersAndAttributes;
 using HelpersCommon.PipelineExtensions;
 using HelpersCommon.Scheduler;
 using Infrastructure;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.OpenApi.Models;
-using System.Net;
 using System.Reflection;
 using System.Text;
 
@@ -78,31 +76,6 @@ try
     builder.Services.AddSession();
 
     builder.Services.AddDistributedMemoryCache();
-
-    builder.Services.ConfigureApplicationCookie(options =>
-    {
-        options.Cookie.HttpOnly = true;
-        options.SlidingExpiration = true;
-        options.ExpireTimeSpan = TimeSpan.FromDays(1);
-        options.Cookie.SecurePolicy = Config.IsProd || Config.IsStaging ? CookieSecurePolicy.Always : CookieSecurePolicy.SameAsRequest;
-        options.Events.OnRedirectToLogin = context =>
-        {
-            context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
-            return Task.CompletedTask;
-        };
-        options.Events.OnRedirectToAccessDenied = context =>
-        {
-            context.Response.StatusCode = (int)HttpStatusCode.Forbidden;
-            return Task.CompletedTask;
-        };
-    });
-
-    builder.Services.AddAuthorization(options =>
-    {
-        options.AddPolicy(nameof(IsUserLockedAuthHandler), new AuthorizationPolicyBuilder()
-               .AddRequirements(new UserNotLockedRequirement())
-               .Build());
-    });
 
     builder.Services.AddHsts(opt =>
     {

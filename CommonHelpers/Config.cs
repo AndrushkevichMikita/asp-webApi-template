@@ -12,7 +12,7 @@ namespace CommonHelpers
 
     public static class Config
     {
-        public static readonly string Env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+        public static readonly string Env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development";
         public static bool IsDev { get; private set; }
         public static bool IsProd { get; private set; }
         public static bool IsStaging { get; private set; }
@@ -32,9 +32,7 @@ namespace CommonHelpers
                 default: IsDev = true; break;
             }
 
-            c.AddJsonFile("appsettings.shared.json", optional: false, reloadOnChange: true)
-             .AddJsonFile($"appsettings.shared.{Env}.json", optional: true, reloadOnChange: true)
-             .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+            c.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
              .AddJsonFile($"appsettings.{Env}.json", optional: true, reloadOnChange: true);
 
             MaxRequestSizeBytes = c.GetSection("MaxRequestSizeMb").Get<int>() * 1024 * 1024;

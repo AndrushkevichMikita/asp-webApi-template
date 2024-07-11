@@ -5,7 +5,7 @@ namespace ApplicationCore.Interfaces
     public interface IAccountService
     {
         Task SignOut();
-        Task SignIn(AccountSignInDto model);
+        Task<(string token, string refreshToken)> SignIn(AccountSignInDto model);
         Task SignUp(AccountSignInDto model);
         Task ConfirmDigitCode(string digitCode);
         Task SendDigitCodeByEmail(string email);

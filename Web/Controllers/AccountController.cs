@@ -1,7 +1,9 @@
 ﻿using ApplicationCore.Entities;
 using ApplicationCore.Interfaces;
 using ApplicationCore.Models;
+using ApplicationCore.Services;
 using CommonHelpers;
+using CommonHelpers.Auth;
 using HelpersCommon.FiltersAndAttributes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -11,16 +13,37 @@ namespace asp_web_api_template.Controllers
     public class AccountController : BaseController<RoleEnum>
     {
         private readonly IAccountService _account;
+        private readonly ApplicationSignInManager _applicationSignInManager;
 
-        public AccountController(IAccountService account)
+        public AccountController(IAccountService account, ApplicationSignInManager applicationSignInManager)
         {
             _account = account;
+            _applicationSignInManager = applicationSignInManager;
+        }
+
+        [Authorize(AuthenticationSchemes = JWTAndCookieAuthShema.JWTWithNoExpirationSchema)]
+        [HttpPost("refreshToken")]
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenDtoModel model)
+        {
+            var user = await _applicationSignInManager.UserManager.FindByIdAsync(CurrentUser.Id.ToString());
+
+            if (user == null || user.RefreshToken != model.RefreshToken || user.RefreshTokenExpiryTime <= DateTime.Now)
+            {
+                return Unauthorized();
+            }
+
+            var newToken = await _applicationSignInManager.GenerateJwtTokenAsync(user);
+            var newRefreshToken = await _applicationSignInManager.GenerateRefreshTokenAsync(user);
+            return Ok(new { token = newToken, refreshToken = newRefreshToken });
         }
 
         [AllowAnonymous]
         [HttpPost("signIn")]
-        public async Task SignIn(AccountSignInDto model)
-            => await _account.SignIn(model);
+        public async Task<IActionResult> SignIn(AccountSignInDto model)
+        {
+            var (token, refreshToken) = await _account.SignIn(model);
+            return Ok(new { token, refreshToken });
+        }
 
         [AllowAnonymous]
         [HttpPost("digitCode")]
@@ -65,7 +88,6 @@ namespace asp_web_api_template.Controllers
         /// Get current authenticated user
         /// </summary>
         /// <returns></returns>
-        [AllowAnonymous]
         [HttpGet()]
         public async Task<AccountBaseDto> GetCurrent()
             => await _account.GetCurrent(CurrentUser.Id);

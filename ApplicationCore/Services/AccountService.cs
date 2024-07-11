@@ -13,21 +13,21 @@ namespace ApplicationCore.Services
     {
         private readonly IRepo<IdentityUserTokenEntity> _userTokenRepo;
         private readonly IEmailTemplateService _emailTemplateService;
-        private readonly SignInManager<UserEntity> _signManager;
-        private readonly UserManager<UserEntity> _manager;
-        private readonly IRepo<UserEntity> _userRepo;
+        private readonly ApplicationSignInManager _signInManager;
+        private readonly UserManager<ApplicationUserEntity> _manager;
+        private readonly IRepo<ApplicationUserEntity> _userRepo;
         private readonly IMapper _mapper;
 
         public AccountService(IEmailTemplateService emailTemplateService,
                               IRepo<IdentityUserTokenEntity> userTokenRepo,
-                              SignInManager<UserEntity> signManager,
-                              UserManager<UserEntity> manager,
-                              IRepo<UserEntity> userRepo,
+                              ApplicationSignInManager signManager,
+                              UserManager<ApplicationUserEntity> manager,
+                              IRepo<ApplicationUserEntity> userRepo,
                               IMapper mapper)
         {
             _emailTemplateService = emailTemplateService;
             _userTokenRepo = userTokenRepo;
-            _signManager = signManager;
+            _signInManager = signManager;
             _userRepo = userRepo;
             _manager = manager;
             _mapper = mapper;
@@ -40,7 +40,7 @@ namespace ApplicationCore.Services
             return code;
         }
 
-        private async Task<UserEntity> DeleteSameNotConfirmed(string email)
+        private async Task<ApplicationUserEntity> DeleteSameNotConfirmed(string email)
         {
             var existingUser = await _manager.FindByEmailAsync(email);
             if (existingUser == null) return null;
@@ -53,21 +53,26 @@ namespace ApplicationCore.Services
         }
 
         public Task SignOut()
-            => _signManager.SignOutAsync();
+            => _signInManager.SignOutAsync();
 
-        public async Task SignIn(AccountSignInDto model)
+        public async Task<(string token, string refreshToken)> SignIn(AccountSignInDto model)
         {
             var appUser = await _manager.FindByEmailAsync(model.Email) ?? throw new MyApplicationException(ErrorStatus.NotFound, "User not found");
             if (!await _manager.IsEmailConfirmedAsync(appUser)) throw new MyApplicationException(ErrorStatus.InvalidData, "Email unconfirmed");
-            var res = await _signManager.PasswordSignInAsync(appUser, model.Password, model.RememberMe ?? false, false);
+
+            var res = await _signInManager.PasswordSignInAsync(appUser, model.Password, model.RememberMe ?? false, false);
             if (!res.Succeeded) throw new MyApplicationException(ErrorStatus.InvalidData, "Password or user invalid");
+
+            var token = await _signInManager.GenerateJwtTokenAsync(appUser);
+            var refreshToken = await _signInManager.GenerateRefreshTokenAsync(appUser);
+            return (token, refreshToken);
         }
 
         public async Task SignUp(AccountSignInDto model)
         {
             await DeleteSameNotConfirmed(model.Email);
 
-            var toInsert = _mapper.Map<UserEntity>(model);
+            var toInsert = _mapper.Map<ApplicationUserEntity>(model);
             var res = await _manager.CreateAsync(toInsert, model.Password);
             if (!res.Succeeded) throw new MyApplicationException(ErrorStatus.InvalidData, string.Join(" ", res.Errors.Select(c => c.Description)));
             await _manager.AddToRoleAsync(toInsert, toInsert.Role.ToString());

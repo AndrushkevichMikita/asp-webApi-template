@@ -1,17 +1,21 @@
 ﻿using ApplicationCore.Entities;
 using ApplicationCore.Interfaces;
+using ApplicationCore.Services;
 using CommonHelpers;
+using CommonHelpers.Auth;
+using HelpersCommon.CustomPolicy;
 using HelpersCommon.ExceptionHandler;
 using Infrastructure.Interceptors;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
-using System.Security.Claims;
+using System.Net;
 
 namespace Infrastructure
 {
@@ -43,8 +47,7 @@ namespace Infrastructure
             });
 
             services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
-
-            services.AddDefaultIdentity<UserEntity>(options =>
+            services.AddDefaultIdentity<ApplicationUserEntity>(options =>
             {
                 options.Password.RequireNonAlphanumeric = false;
                 options.Password.RequireDigit = true;
@@ -59,10 +62,35 @@ namespace Infrastructure
             }).AddRoles<IdentityRole<int>>()
               .AddEntityFrameworkStores<ApplicationDbContext>()
               .AddDefaultTokenProviders()
-              .AddClaimsPrincipalFactory<CustomUserClaimsPrincipalFactory>();
+              .AddClaimsPrincipalFactory<ApplicationUserClaimsPrincipalFactory>();
 #if DEBUG
             services.AddDatabaseDeveloperPageExceptionFilter();
 #endif
+            services.ConfigureApplicationCookie(options =>
+            {
+                options.Cookie.HttpOnly = true;
+                options.SlidingExpiration = true;
+                options.ExpireTimeSpan = TimeSpan.FromDays(1);
+                options.Cookie.SecurePolicy = Config.IsProd || Config.IsStaging ? CookieSecurePolicy.Always : CookieSecurePolicy.SameAsRequest;
+                options.Events.OnRedirectToLogin = context =>
+                {
+                    context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
+                    return Task.CompletedTask;
+                };
+                options.Events.OnRedirectToAccessDenied = context =>
+                {
+                    context.Response.StatusCode = (int)HttpStatusCode.Forbidden;
+                    return Task.CompletedTask;
+                };
+            });
+
+            // IdentityConstants.ApplicationScheme == default shema that defined in Identity
+            JWTAndCookieAuthShema.AddAndUseJWTSchemaIfTokenProvided(services, configuration, IdentityConstants.ApplicationScheme);
+
+            services.AddAuthorization(options =>
+            {
+                options.AddPolicy(nameof(IsUserLockedAuthHandler), policy => policy.Requirements.Add(new UserNotLockedRequirement()));
+            });
             return services;
         }
 
@@ -80,24 +108,6 @@ namespace Infrastructure
             foreach (var role in Enum.GetNames(typeof(RoleEnum)))
                 if (!await roleManager.RoleExistsAsync(role))
                     await roleManager.CreateAsync(new IdentityRole<int> { Name = role });
-        }
-    }
-
-    public class CustomUserClaimsPrincipalFactory : UserClaimsPrincipalFactory<UserEntity, IdentityRole<int>>
-    {
-        public CustomUserClaimsPrincipalFactory(
-            UserManager<UserEntity> userManager,
-            RoleManager<IdentityRole<int>> roleManager,
-            IOptions<IdentityOptions> optionsAccessor)
-            : base(userManager, roleManager, optionsAccessor)
-        {
-        }
-
-        protected override async Task<ClaimsIdentity> GenerateClaimsAsync(UserEntity user)
-        {
-            var identity = await base.GenerateClaimsAsync(user);
-            identity.AddClaim(new Claim(ClaimTypes.AuthorizationDecision, user.LockoutEnabled ? (user.LockoutEnd?.UtcDateTime)?.ToString() ?? "" : ""));
-            return identity;
         }
     }
 

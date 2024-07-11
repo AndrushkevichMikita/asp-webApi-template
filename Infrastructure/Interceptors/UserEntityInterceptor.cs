@@ -24,7 +24,7 @@ namespace Infrastructure.Interceptors
             if (context == null) return;
 
             var now = DateTime.UtcNow;
-            foreach (var entry in context.ChangeTracker.Entries<UserEntity>())
+            foreach (var entry in context.ChangeTracker.Entries<ApplicationUserEntity>())
             {
                 if (entry.State == EntityState.Added)
                 {
