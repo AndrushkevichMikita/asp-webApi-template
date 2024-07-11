@@ -1,16 +1,14 @@
 using ApplicationCore;
 using ApplicationCore.Configuration;
 using CommonHelpers;
-using HelpersCommon.ControllerExtensions;
+using HelpersCommon.CustomPolicy;
 using HelpersCommon.ExceptionHandler;
 using HelpersCommon.Extensions;
 using HelpersCommon.FiltersAndAttributes;
 using HelpersCommon.PipelineExtensions;
 using HelpersCommon.Scheduler;
 using Infrastructure;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.OpenApi.Models;
-using System.Net;
 using System.Reflection;
 using System.Text;
 
@@ -77,13 +75,6 @@ try
     builder.Services.AddSession();
 
     builder.Services.AddDistributedMemoryCache();
-
-    builder.Services.AddAuthorization(options =>
-    {
-        options.AddPolicy(nameof(IsUserLockedAuthHandler), new AuthorizationPolicyBuilder()
-               .AddRequirements(new UserNotLockedRequirement())
-               .Build());
-    });
 
     builder.Services.AddHsts(opt =>
     {

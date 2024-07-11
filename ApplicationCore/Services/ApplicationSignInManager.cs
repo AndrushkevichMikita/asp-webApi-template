@@ -59,17 +59,5 @@ namespace ApplicationCore.Services
 
             return refreshToken;
         }
-
-        public static TokenValidationParameters GetTokenValidationParameters(IConfiguration configuration)
-          => new()
-          {
-              ValidateIssuer = true,
-              ValidateAudience = true,
-              ValidateLifetime = true,
-              ValidateIssuerSigningKey = true,
-              ValidIssuer = configuration["Jwt:Issuer"],
-              ValidAudience = configuration["Jwt:Audience"],
-              IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(configuration["Jwt:Key"]))
-          };
     }
 }

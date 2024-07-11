@@ -3,7 +3,7 @@ using Elastic.Apm.DiagnosticSource;
 using Elastic.Apm.EntityFrameworkCore;
 using Elastic.Apm.SerilogEnricher;
 using Elastic.CommonSchema.Serilog;
-using HelpersCommon.ControllerExtensions;
+using HelpersCommon.CustomPolicy;
 using HelpersCommon.FiltersAndAttributes;
 using HelpersCommon.PipelineExtensions;
 using HelpersCommon.Scheduler;

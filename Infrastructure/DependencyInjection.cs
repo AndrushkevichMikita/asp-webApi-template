@@ -2,9 +2,11 @@
 using ApplicationCore.Interfaces;
 using ApplicationCore.Services;
 using CommonHelpers;
+using CommonHelpers.Auth;
+using HelpersCommon.CustomPolicy;
 using HelpersCommon.ExceptionHandler;
 using Infrastructure.Interceptors;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -13,9 +15,7 @@ using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.IdentityModel.Tokens;
 using System.Net;
-using System.Text;
 
 namespace Infrastructure
 {
@@ -84,38 +84,13 @@ namespace Infrastructure
                 };
             });
 
-            services.AddAuthentication(options =>
-            {
-                options.DefaultChallengeScheme = "smart";
-                options.DefaultAuthenticateScheme = "smart";
-            })
-            .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
-            {
-                options.Events.OnAuthenticationFailed = context =>
-                {
-                    context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
-                    return Task.CompletedTask;
-                };
-                options.Events.OnForbidden = context =>
-                {
-                    context.Response.StatusCode = (int)HttpStatusCode.Forbidden;
-                    return Task.CompletedTask;
-                };
-                options.TokenValidationParameters = ApplicationSignInManager.GetTokenValidationParameters(configuration);
-            })
-            .AddPolicyScheme("smart", "Smart Authentication", options =>
-            {
-                options.ForwardDefaultSelector = context =>
-                {
-                    var authHeader = context.Request.Headers["Authorization"].FirstOrDefault();
-                    if (authHeader?.StartsWith("Bearer ") == true)
-                    {
-                        return JwtBearerDefaults.AuthenticationScheme;
-                    }
-                    return IdentityConstants.ApplicationScheme; // It's default shema that defined in Identity
-                };
-            });
+            // IdentityConstants.ApplicationScheme == default shema that defined in Identity
+            JWTAndCookieAuthShema.AddAndUseJWTSchemaIfTokenProvided(services, configuration, IdentityConstants.ApplicationScheme);
 
+            services.AddAuthorization(options =>
+            {
+                options.AddPolicy(nameof(IsUserLockedAuthHandler), policy => policy.Requirements.Add(new UserNotLockedRequirement()));
+            });
             return services;
         }
 

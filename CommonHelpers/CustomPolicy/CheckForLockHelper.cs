@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using System.Collections.Concurrent;
 using System.Security.Claims;
 
-namespace HelpersCommon.ControllerExtensions
+namespace HelpersCommon.CustomPolicy
 {
     public class UserNotLockedRequirement : IAuthorizationRequirement { }
 

@@ -3,11 +3,10 @@ using ApplicationCore.Interfaces;
 using ApplicationCore.Models;
 using ApplicationCore.Services;
 using CommonHelpers;
+using CommonHelpers.Auth;
 using HelpersCommon.FiltersAndAttributes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
 
 namespace asp_web_api_template.Controllers
 {
@@ -22,19 +21,10 @@ namespace asp_web_api_template.Controllers
             _applicationSignInManager = applicationSignInManager;
         }
 
-        [AllowAnonymous]
+        [Authorize(AuthenticationSchemes = JWTAndCookieAuthShema.JWTWithNoExpirationSchema)]
         [HttpPost("refreshToken")]
-        public async Task<IActionResult> RefreshToken([FromServices] IConfiguration configuration, [FromBody] RefreshTokenDtoModel model)
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenDtoModel model)
         {
-            var tokenValidationParameters = ApplicationSignInManager.GetTokenValidationParameters(configuration);
-            tokenValidationParameters.ValidateLifetime = false; // WARN: Since token can be already expired
-
-            _ = new JwtSecurityTokenHandler().ValidateToken(model.Token, tokenValidationParameters, out SecurityToken securityToken);
-            if (securityToken is not JwtSecurityToken jwtSecurityToken || !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
-            {
-                return Unauthorized();
-            }
-
             var user = await _applicationSignInManager.UserManager.FindByIdAsync(CurrentUser.Id.ToString());
 
             if (user == null || user.RefreshToken != model.RefreshToken || user.RefreshTokenExpiryTime <= DateTime.Now)
