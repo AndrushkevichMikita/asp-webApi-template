@@ -7,7 +7,7 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 
-namespace Tests.Account
+namespace ApiTemplate.Presentation.Web.Tests.Integration.Account
 {
     public class AccountTests : BaseIntegrationTest
     {

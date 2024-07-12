@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Tests
+namespace ApiTemplate.Presentation.Web.Tests.Integration
 {
     public class CustomWebApplicationFactory : WebApplicationFactory<Program>
     {
