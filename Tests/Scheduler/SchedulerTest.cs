@@ -1,4 +1,4 @@
-using HelpersCommon.Scheduler;
+using ApiTemplate.SharedKernel.Scheduler;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 

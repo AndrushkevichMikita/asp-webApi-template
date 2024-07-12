@@ -1,6 +1,6 @@
-﻿using ApplicationCore.Entities;
-using ApplicationCore.Models;
-using ApplicationCore.Repository;
+﻿using ApiTemplate.Application.Entities;
+using ApiTemplate.Application.Models;
+using ApiTemplate.Application.Repository;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using System.Net.Http.Json;

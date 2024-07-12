@@ -1,4 +1,4 @@
-﻿using HelpersCommon.Scheduler;
+﻿using ApiTemplate.SharedKernel.Scheduler;
 
 namespace Tests.Scheduler
 {
