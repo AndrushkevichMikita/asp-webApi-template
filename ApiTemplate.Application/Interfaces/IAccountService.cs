@@ -4,12 +4,20 @@ namespace ApiTemplate.Application.Interfaces
 {
     public interface IAccountService
     {
+        Task CreateAccount(AccountDto model);
+
+        Task<RefreshTokenDto> LoginAccount(AccountDto model);
+
+        Task<RefreshTokenDto> CreateNewJwtPair(RefreshTokenDto model);
+
         Task SignOut();
-        Task<(string token, string refreshToken)> SignIn(AccountSignInDto model);
-        Task SignUp(AccountSignInDto model);
+
         Task ConfirmDigitCode(string digitCode);
+
         Task SendDigitCodeByEmail(string email);
+
         Task Delete(string password, int accountId);
-        Task<AccountBaseDto> GetCurrent(int userId);
+
+        Task<AccountDto> GetCurrent(int userId);
     }
 }

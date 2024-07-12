@@ -55,20 +55,22 @@ namespace ApiTemplate.Application.Services
         public Task SignOut()
             => _signInManager.SignOutAsync();
 
-        public async Task<(string token, string refreshToken)> SignIn(AccountSignInDto model)
+        public async Task<RefreshTokenDto> LoginAccount(AccountDto model)
         {
             var appUser = await _manager.FindByEmailAsync(model.Email) ?? throw new MyApplicationException(ErrorStatus.NotFound, "User not found");
             if (!await _manager.IsEmailConfirmedAsync(appUser)) throw new MyApplicationException(ErrorStatus.InvalidData, "Email unconfirmed");
 
-            var res = await _signInManager.PasswordSignInAsync(appUser, model.Password, model.RememberMe ?? false, false);
+            var res = await _signInManager.PasswordSignInAsync(appUser, model.Password, model.RememberMe, false);
             if (!res.Succeeded) throw new MyApplicationException(ErrorStatus.InvalidData, "Password or user invalid");
 
-            var token = await _signInManager.GenerateJwtTokenAsync(appUser);
-            var refreshToken = await _signInManager.GenerateRefreshTokenAsync(appUser);
-            return (token, refreshToken);
+            return new RefreshTokenDto
+            {
+                Token = await _signInManager.GenerateJwtTokenAsync(appUser),
+                RefreshToken = await _signInManager.GenerateRefreshTokenAsync(appUser)
+            };
         }
 
-        public async Task SignUp(AccountSignInDto model)
+        public async Task CreateAccount(AccountDto model)
         {
             await DeleteSameNotConfirmed(model.Email);
 
@@ -78,11 +80,11 @@ namespace ApiTemplate.Application.Services
             await _manager.AddToRoleAsync(toInsert, toInsert.Role.ToString());
         }
 
-        public async Task<AccountBaseDto> GetCurrent(int userId)
+        public async Task<AccountDto> GetCurrent(int userId)
         {
             var user = await _userRepo.GetIQueryable().FirstOrDefaultAsync(x => x.Id == userId);
             if (user is null) return null;
-            return _mapper.Map<AccountBaseDto>(user);
+            return _mapper.Map<AccountDto>(user);
         }
 
         public async Task SendDigitCodeByEmail(string email)
@@ -105,7 +107,7 @@ namespace ApiTemplate.Application.Services
                 Value = await _manager.GenerateEmailConfirmationTokenAsync(appUser)
             }, true);
 
-            await _emailTemplateService.SendDigitCodeParallelAsync(new List<EmailDtoModel>{new() {
+            await _emailTemplateService.SendDigitCodeParallelAsync(new List<EmailDto>{new() {
                 UserEmail = appUser.Email,
                 DigitCode = digitCode,
                 FirstName = appUser.FirstName,
@@ -137,6 +139,19 @@ namespace ApiTemplate.Application.Services
             var res = await _manager.CheckPasswordAsync(account, password);
             if (!res) throw new MyApplicationException(ErrorStatus.InvalidData, "Password invalid");
             await _manager.DeleteAsync(account);
+        }
+
+        public async Task<RefreshTokenDto> CreateNewJwtPair(RefreshTokenDto model)
+        {
+            var user = await _signInManager.UserManager.FindByIdAsync(CurrentUser.Id.ToString());
+
+            if (user == null || user.RefreshToken != model.RefreshToken || user.RefreshTokenExpiryTime <= DateTime.Now)
+            {
+                return Unauthorized();
+            }
+
+            var newToken = await _applicationSignInManager.GenerateJwtTokenAsync(user);
+            var newRefreshToken = await _applicationSignInManager.GenerateRefreshTokenAsync(user);
         }
     }
 }

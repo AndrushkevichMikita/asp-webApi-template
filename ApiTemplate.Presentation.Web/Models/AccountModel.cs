@@ -1,10 +1,13 @@
 ﻿using ApiTemplate.Application.Entities;
 using System.ComponentModel.DataAnnotations;
 
-namespace ApiTemplate.Application.Models
+namespace ApiTemplate.Presentation.Web.Models
 {
-    public class AccountBaseDto
+    public class AccountModel
     {
+        [Required]
+        public int Id { get; set; }
+
         [Required]
         [EmailAddress]
         public string Email { get; set; }

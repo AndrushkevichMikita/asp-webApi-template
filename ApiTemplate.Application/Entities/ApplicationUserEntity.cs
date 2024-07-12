@@ -19,6 +19,7 @@ namespace ApiTemplate.Application.Entities
 
         public RoleEnum Role { get; set; }
         public ICollection<IdentityUserTokenEntity> Tokens { get; set; }
+
         public bool IsLocked() => LockoutEnabled && LockoutEnd?.UtcDateTime > DateTime.UtcNow;
     }
 

@@ -4,7 +4,7 @@ namespace ApiTemplate.Application.Interfaces
 {
     public interface IEmailTemplateService
     {
-        Task SendDigitCodeAsync(EmailDtoModel model);
-        Task SendDigitCodeParallelAsync(List<EmailDtoModel> models);
+        Task SendDigitCodeAsync(EmailDto model);
+        Task SendDigitCodeParallelAsync(List<EmailDto> models);
     }
 }

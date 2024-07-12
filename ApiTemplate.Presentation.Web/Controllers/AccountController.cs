@@ -1,10 +1,11 @@
 ﻿using ApiTemplate.Application.Entities;
 using ApiTemplate.Application.Interfaces;
 using ApiTemplate.Application.Models;
-using ApiTemplate.Application.Services;
+using ApiTemplate.Presentation.Web.Models;
 using ApiTemplate.SharedKernel;
 using ApiTemplate.SharedKernel.Auth;
 using ApiTemplate.SharedKernel.FiltersAndAttributes;
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,37 +13,49 @@ namespace ApiTemplate.Presentation.Web.Controllers
 {
     public class AccountController : BaseController<RoleEnum>
     {
+        private readonly IMapper _mapper;
         private readonly IAccountService _account;
-        private readonly ApplicationSignInManager _applicationSignInManager;
 
-        public AccountController(IAccountService account, ApplicationSignInManager applicationSignInManager)
+        public AccountController(IAccountService account,
+                                 IMapper mapper)
         {
+            _mapper = mapper;
             _account = account;
-            _applicationSignInManager = applicationSignInManager;
         }
 
         [Authorize(AuthenticationSchemes = JWTAndCookieAuthShema.JWTWithNoExpirationSchema)]
         [HttpPost("refreshToken")]
-        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenDtoModel model)
+        public async Task<RefreshTokenModel> RefreshToken([FromBody] RefreshTokenModel model)
         {
-            var user = await _applicationSignInManager.UserManager.FindByIdAsync(CurrentUser.Id.ToString());
+            var dto = _mapper.Map<RefreshTokenDto>(model);
+            return _mapper.Map<RefreshTokenModel>(await _account.CreateNewJwtPair(dto));
+        }
 
-            if (user == null || user.RefreshToken != model.RefreshToken || user.RefreshTokenExpiryTime <= DateTime.Now)
-            {
-                return Unauthorized();
-            }
+        /// <summary>
+        /// Get current authenticated user
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet()]
+        public async Task<AccountModel> GetCurrent()
+        {
+            var dto = await _account.GetCurrent(CurrentUser.Id);
+            return _mapper.Map<AccountModel>(dto);
+        }
 
-            var newToken = await _applicationSignInManager.GenerateJwtTokenAsync(user);
-            var newRefreshToken = await _applicationSignInManager.GenerateRefreshTokenAsync(user);
-            return Ok(new { token = newToken, refreshToken = newRefreshToken });
+        [AllowAnonymous]
+        [HttpPost("signUp")]
+        public async Task CreateAccount(CreateAccountModel model)
+        {
+            var dto = _mapper.Map<AccountDto>(model);
+            await _account.CreateAccount(dto);
         }
 
         [AllowAnonymous]
         [HttpPost("signIn")]
-        public async Task<IActionResult> SignIn(AccountSignInDto model)
+        public async Task<RefreshTokenModel> LoginAccount(LoginAccountModel model)
         {
-            var (token, refreshToken) = await _account.SignIn(model);
-            return Ok(new { token, refreshToken });
+            var dto = _mapper.Map<AccountDto>(model);
+            return _mapper.Map<RefreshTokenModel>(await _account.LoginAccount(dto));
         }
 
         [AllowAnonymous]
@@ -54,11 +67,6 @@ namespace ApiTemplate.Presentation.Web.Controllers
         [HttpPut("digitCode")]
         public async Task ConfirmDigitCode([FromBody] string code)
             => await _account.ConfirmDigitCode(code);
-
-        [AllowAnonymous]
-        [HttpPost("signUp")]
-        public async Task SignUp(AccountSignInDto model)
-            => await _account.SignUp(model);
 
         /// <summary>
         /// Signs the current user out of the application.
@@ -83,14 +91,6 @@ namespace ApiTemplate.Presentation.Web.Controllers
             var r = User.IsInRole(RoleEnum.SuperAdmin.ToString());
             return Ok(User.Claims.Select(c => c.Value).ToList());
         }
-
-        /// <summary>
-        /// Get current authenticated user
-        /// </summary>
-        /// <returns></returns>
-        [HttpGet()]
-        public async Task<AccountBaseDto> GetCurrent()
-            => await _account.GetCurrent(CurrentUser.Id);
 
         /// <summary>
         /// Delete user if password verification is successful

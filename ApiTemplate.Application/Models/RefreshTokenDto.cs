@@ -2,12 +2,10 @@
 
 namespace ApiTemplate.Application.Models
 {
-    public class RefreshTokenDtoModel
+    public class RefreshTokenDto
     {
-        [Required(AllowEmptyStrings = false)]
         public string Token { get; set; }
 
-        [Required(AllowEmptyStrings = false)]
         public string RefreshToken { get; set; }
     }
 }
