@@ -1,9 +1,9 @@
-﻿using ApiTemplate.Application.Entities;
+﻿using ApiTemplate.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using System.Security.Claims;
 
-namespace ApiTemplate.Application.Services
+namespace ApiTemplate.Domain.Services
 {
     public class ApplicationUserClaimsPrincipalFactory : UserClaimsPrincipalFactory<ApplicationUserEntity, IdentityRole<int>>
     {
@@ -19,7 +19,9 @@ namespace ApiTemplate.Application.Services
         public async Task<ClaimsIdentity> GenerateAdjustedClaimsAsync(ApplicationUserEntity user)
         {
             var identity = await base.GenerateClaimsAsync(user);
-            identity.AddClaim(new Claim(ClaimTypes.AuthorizationDecision, user.LockoutEnabled ? (user.LockoutEnd?.UtcDateTime)?.ToString() ?? "" : ""));
+            if (user.LockoutEnabled && user.LockoutEnd.HasValue)
+                identity.AddClaim(new Claim(ClaimTypes.AuthorizationDecision, user.LockoutEnd.Value.UtcDateTime.ToString()));
+
             return identity;
         }
     }

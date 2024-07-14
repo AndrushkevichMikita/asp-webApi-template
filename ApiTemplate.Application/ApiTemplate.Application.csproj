@@ -16,6 +16,7 @@
     <PackageReference Include="EFCore.BulkExtensions" Version="6.0.0" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\ApiTemplate.Domain\ApiTemplate.Domain.csproj" />
     <ProjectReference Include="..\ApiTemplate.SharedKernel\ApiTemplate.SharedKernel.csproj" />
   </ItemGroup>
 </Project>

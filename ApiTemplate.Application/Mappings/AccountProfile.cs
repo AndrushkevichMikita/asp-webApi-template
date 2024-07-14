@@ -1,5 +1,5 @@
-﻿using ApiTemplate.Application.Entities;
-using ApiTemplate.Application.Models;
+﻿using ApiTemplate.Application.Models;
+using ApiTemplate.Domain.Entities;
 using AutoMapper;
 
 namespace CommandsService.Profiles

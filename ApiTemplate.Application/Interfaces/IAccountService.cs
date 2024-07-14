@@ -8,7 +8,7 @@ namespace ApiTemplate.Application.Interfaces
 
         Task<RefreshTokenDto> LoginAccount(AccountDto model);
 
-        Task<RefreshTokenDto> CreateNewJwtPair(RefreshTokenDto model);
+        Task<RefreshTokenDto> CreateNewJwtPair(RefreshTokenDto model, int userId);
 
         Task SignOut();
 

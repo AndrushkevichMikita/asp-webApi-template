@@ -1,5 +1,4 @@
-﻿using ApiTemplate.Application.Entities;
-using ApiTemplate.Application.Interfaces;
+﻿using ApiTemplate.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -15,8 +14,7 @@ namespace ApiTemplate.Infrastructure
                                         IdentityUserRole<int>,
                                         IdentityUserLogin<int>,
                                         IdentityRoleClaim<int>,
-                                        IdentityUserTokenEntity>,
-                                        IApplicationDbContext
+                                        IdentityUserTokenEntity>
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
@@ -30,7 +28,7 @@ namespace ApiTemplate.Infrastructure
             optionsBuilder.ConfigureWarnings(w => w.Throw(RelationalEventId.MultipleCollectionIncludeWarning));
 
             // logging the Command Execution
-            // Enable here on in Elastic Apm, otherwice messages will duplicates
+            // Enable here or in Elastic Apm, otherwice messages will duplicates
             // optionsBuilder.LogTo(message => Debug.WriteLine(message), LogLevel.Information)
             //               .EnableSensitiveDataLogging()
             //               .EnableDetailedErrors();
@@ -69,11 +67,6 @@ namespace ApiTemplate.Infrastructure
                         property.SetValueConverter(nullableDateTimeConverter);
                 }
             }
-        }
-
-        public DbContext ProvideContext()
-        {
-            return this;
         }
     }
 }

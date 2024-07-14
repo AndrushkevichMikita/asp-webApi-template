@@ -1,6 +1,6 @@
 ﻿using System.Linq.Expressions;
 
-namespace ApiTemplate.Application.Repository
+namespace ApiTemplate.Domain.Interfaces
 {
     public interface IRepo<TEntity> where TEntity : class
     {
@@ -12,6 +12,7 @@ namespace ApiTemplate.Application.Repository
         Task<TList> InsertAsync<TList>(TList entities, bool saveChanges = false, CancellationToken cancellationToken = default) where TList : IList<TEntity>;
         Task DeleteAsync(TEntity entity, bool saveChanges = false, CancellationToken cancellationToken = default);
         Task DeleteAsync<TList>(TList items, bool saveChanges = false, bool offBulk = false, CancellationToken cancellationToken = default) where TList : IList<TEntity>;
+
         /// <summary>
         /// Update attached entity, with only modified props.
         /// Throws exception if entity is not attached.

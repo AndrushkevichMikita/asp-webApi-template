@@ -15,6 +15,7 @@
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="6.0.22" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="6.0.22" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.22" />
+    <PackageReference Include="EFCore.BulkExtensions" Version="6.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="6.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="6.0.22" />
   </ItemGroup>
@@ -22,6 +23,7 @@
     <Folder Include="Migrations\" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\ApiTemplate.Application\ApiTemplate.Application.csproj" />
+    <ProjectReference Include="..\ApiTemplate.Domain\ApiTemplate.Domain.csproj" />
+    <ProjectReference Include="..\ApiTemplate.SharedKernel\ApiTemplate.SharedKernel.csproj" />
   </ItemGroup>
 </Project>

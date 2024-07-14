@@ -1,14 +1,16 @@
-﻿using Microsoft.AspNetCore.Authentication;
+﻿using ApiTemplate.Domain.Entities;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
-using ApiTemplate.Application.Entities;
-using Microsoft.Extensions.Configuration;
-using ApiTemplate.SharedKernel.Auth;
+using System.Security.Claims;
+using System.Text;
 
-namespace ApiTemplate.Application.Services
+namespace ApiTemplate.Domain.Services
 {
     public class ApplicationSignInManager : SignInManager<ApplicationUserEntity>
     {
@@ -32,10 +34,29 @@ namespace ApiTemplate.Application.Services
             _applicationUserClaimsPrincipalFactory = applicationUserClaimsPrincipalFactory;
         }
 
+        public static TokenValidationParameters GetTokenValidationParameters(IConfiguration configuration)
+          => new()
+          {
+              ValidateIssuer = true,
+              ValidateAudience = true,
+              ValidateLifetime = true,
+              ValidateIssuerSigningKey = true,
+              ValidIssuer = configuration["Jwt:Issuer"],
+              ValidAudience = configuration["Jwt:Audience"],
+              IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(configuration["Jwt:Key"]))
+          };
+
+        public static JwtSecurityToken CreateJWTToken(IConfiguration configuration, IEnumerable<Claim> claims)
+          => new(issuer: configuration["Jwt:Issuer"],
+                 audience: configuration["Jwt:Audience"],
+                 claims: claims,
+                 expires: DateTime.Now.AddMinutes(int.Parse(configuration["Jwt:LifetimeMinutes"])),
+                 signingCredentials: new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"])), SecurityAlgorithms.HmacSha256));
+
         public async Task<string> GenerateJwtTokenAsync(ApplicationUserEntity user)
         {
             var claims = await _applicationUserClaimsPrincipalFactory.GenerateAdjustedClaimsAsync(user);
-            var token = JWTAndCookieAuthShema.CreateJWTToken(_configuration, claims.Claims);
+            var token = CreateJWTToken(_configuration, claims.Claims);
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 

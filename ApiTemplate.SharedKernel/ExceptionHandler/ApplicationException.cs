@@ -1,12 +1,10 @@
-﻿using System;
-
-namespace ApiTemplate.SharedKernel.ExceptionHandler
+﻿namespace ApiTemplate.SharedKernel.ExceptionHandler
 {
     public enum ErrorStatus
     {
         InvalidData,
         NotFound,
-        NotUnauthorized,
+        Unauthorized,
         Forbidden,
         NotAcceptable,
         PayloadLarge,
@@ -15,6 +13,11 @@ namespace ApiTemplate.SharedKernel.ExceptionHandler
     public class MyApplicationException : Exception
     {
         public ErrorStatus ErrorStatus { get; init; }
+
+        public MyApplicationException(ErrorStatus errorStatus) : base()
+        {
+            ErrorStatus = errorStatus;
+        }
 
         public MyApplicationException(ErrorStatus errorStatus, string message) : base(message)
         {

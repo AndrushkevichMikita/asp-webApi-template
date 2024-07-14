@@ -1,9 +1,8 @@
-﻿using ApiTemplate.Application.Entities;
-using ApiTemplate.Application.Interfaces;
+﻿using ApiTemplate.Application.Interfaces;
 using ApiTemplate.Application.Models;
+using ApiTemplate.Domain.Entities;
 using ApiTemplate.Presentation.Web.Models;
 using ApiTemplate.SharedKernel;
-using ApiTemplate.SharedKernel.Auth;
 using ApiTemplate.SharedKernel.FiltersAndAttributes;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
@@ -28,7 +27,7 @@ namespace ApiTemplate.Presentation.Web.Controllers
         public async Task<RefreshTokenModel> RefreshToken([FromBody] RefreshTokenModel model)
         {
             var dto = _mapper.Map<RefreshTokenDto>(model);
-            return _mapper.Map<RefreshTokenModel>(await _account.CreateNewJwtPair(dto));
+            return _mapper.Map<RefreshTokenModel>(await _account.CreateNewJwtPair(dto, CurrentUser.Id));
         }
 
         /// <summary>

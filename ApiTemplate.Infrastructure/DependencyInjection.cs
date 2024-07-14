@@ -1,51 +1,37 @@
-﻿using ApiTemplate.Application.Entities;
-using ApiTemplate.Application.Interfaces;
-using ApiTemplate.Application.Services;
+﻿using ApiTemplate.Domain.Entities;
+using ApiTemplate.Domain.Interfaces;
+using ApiTemplate.Domain.Services;
 using ApiTemplate.Infrastructure.Interceptors;
-using ApiTemplate.SharedKernel;
-using ApiTemplate.SharedKernel.Auth;
-using ApiTemplate.SharedKernel.CustomPolicy;
-using ApiTemplate.SharedKernel.ExceptionHandler;
+using ApiTemplate.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using System.Net;
 
 namespace ApiTemplate.Infrastructure
 {
     public static class DependencyInjection
     {
-        public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
+        public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddScoped<ISaveChangesInterceptor, UserEntityInterceptor>();
-
             services.AddDbContext<ApplicationDbContext>((sp, options) =>
             {
                 options.AddInterceptors(sp.GetServices<ISaveChangesInterceptor>());
 
-                if (configuration.GetValue<bool>("IsInMemoryDb")) options.UseInMemoryDatabase(Guid.NewGuid().ToString());
+                if (configuration.GetValue<bool>("IsInMemoryDb"))
+                {
+                    options.UseInMemoryDatabase(Guid.NewGuid().ToString());
+                }
                 else
                 {
-                    var section = configuration.GetSection("ConnectionStrings");
-                    var useDb = Enum.Parse<UseDb>(Environment.GetEnvironmentVariable("UseDb") ?? configuration.GetValue<UseDb>(nameof(UseDb)).ToString());
-                    var connection = useDb switch
-                    {
-                        UseDb.Azure => Environment.GetEnvironmentVariable("DOTNET_AzureDb") ?? section.GetValue<string>("AzureDb"),
-                        UseDb.AWS => Environment.GetEnvironmentVariable("DOTNET_AWSDb") ?? section.GetValue<string>("AWSDb"),
-                        UseDb.Docker => Environment.GetEnvironmentVariable("DOTNET_DockerDb") ?? section.GetValue<string>("DockerDb"),
-                        _ => section.GetValue<string>("MSSQLDb")
-                    } ?? throw new MyApplicationException(ErrorStatus.InvalidData, "Db connection");
-
+                    var connection = configuration.GetConnectionString("MSSQL") ?? throw new ArgumentNullException("Db connection");
                     options.UseSqlServer(connection);
                 }
             });
 
-            services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
             services.AddDefaultIdentity<ApplicationUserEntity>(options =>
             {
                 options.Password.RequireNonAlphanumeric = false;
@@ -62,34 +48,12 @@ namespace ApiTemplate.Infrastructure
               .AddEntityFrameworkStores<ApplicationDbContext>()
               .AddDefaultTokenProviders()
               .AddClaimsPrincipalFactory<ApplicationUserClaimsPrincipalFactory>();
+
+            services.AddScoped(typeof(IRepo<>), typeof(TRepository<>));
+            services.AddScoped<ISaveChangesInterceptor, UserEntityInterceptor>();
 #if DEBUG
             services.AddDatabaseDeveloperPageExceptionFilter();
 #endif
-            services.ConfigureApplicationCookie(options =>
-            {
-                options.Cookie.HttpOnly = true;
-                options.SlidingExpiration = true;
-                options.ExpireTimeSpan = TimeSpan.FromDays(1);
-                options.Cookie.SecurePolicy = Config.IsProd || Config.IsStaging ? CookieSecurePolicy.Always : CookieSecurePolicy.SameAsRequest;
-                options.Events.OnRedirectToLogin = context =>
-                {
-                    context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
-                    return Task.CompletedTask;
-                };
-                options.Events.OnRedirectToAccessDenied = context =>
-                {
-                    context.Response.StatusCode = (int)HttpStatusCode.Forbidden;
-                    return Task.CompletedTask;
-                };
-            });
-
-            // IdentityConstants.ApplicationScheme == default shema that defined in Identity
-            JWTAndCookieAuthShema.AddAndUseJWTSchemaIfTokenProvided(services, configuration, IdentityConstants.ApplicationScheme);
-
-            services.AddAuthorization(options =>
-            {
-                options.AddPolicy(nameof(IsUserLockedAuthHandler), policy => policy.Requirements.Add(new UserNotLockedRequirement()));
-            });
             return services;
         }
 
@@ -98,7 +62,7 @@ namespace ApiTemplate.Infrastructure
             var scope = servicesProvider.CreateScope().ServiceProvider;
             if (!configuration.GetValue<bool>("IsInMemoryDb"))
             {
-                var db = scope.GetRequiredService<IApplicationDbContext>().ProvideContext().Database;
+                var db = scope.GetRequiredService<ApplicationDbContext>().Database;
                 if ((await db.GetPendingMigrationsAsync()).Any())
                     await db.MigrateAsync();
             }
@@ -116,10 +80,10 @@ namespace ApiTemplate.Infrastructure
         public ApplicationDbContext CreateDbContext(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
-            builder.Configuration.ApplyConfiguration();
-            var b = new DbContextOptionsBuilder<ApplicationDbContext>();
-            b.UseSqlServer(builder.Configuration.GetSection("ConnectionStrings").GetValue<string>("MSSQLDb"));
-            return new ApplicationDbContext(b.Options);
+            //builder.Configuration.ApplyConfiguration();
+            var options = new DbContextOptionsBuilder<ApplicationDbContext>();
+            options.UseSqlServer(builder.Configuration.GetConnectionString("MSSQL"));
+            return new ApplicationDbContext(options.Options);
         }
     }
 }

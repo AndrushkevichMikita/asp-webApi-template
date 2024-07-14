@@ -1,46 +1,39 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using ApiTemplate.Domain.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
 using System.Net;
-using System.Security.Claims;
-using System.Text;
-using IConfiguration = Microsoft.Extensions.Configuration.IConfiguration;
 
-namespace ApiTemplate.SharedKernel.Auth
+namespace ApiTemplate.Domain
 {
-    public static class JWTAndCookieAuthShema
+    public static class DependencyInjection
     {
         public const string JWTWithNoExpirationSchema = nameof(JWTWithNoExpirationSchema);
 
-        public static JwtSecurityToken CreateJWTToken(IConfiguration configuration, IEnumerable<Claim> claims)
-           => new(issuer: configuration["Jwt:Issuer"],
-                  audience: configuration["Jwt:Audience"],
-                  claims: claims,
-                  expires: DateTime.Now.AddMinutes(int.Parse(configuration["Jwt:LifetimeMinutes"])),
-                  signingCredentials: new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"])), SecurityAlgorithms.HmacSha256));
+        public static IServiceCollection AddDomain(this IServiceCollection services, IConfiguration configuration, string schema)
+        {
+            services.AddScoped<ApplicationSignInManager, ApplicationSignInManager>();
+            services.AddScoped<ApplicationUserClaimsPrincipalFactory, ApplicationUserClaimsPrincipalFactory>();
 
-        public static TokenValidationParameters GetTokenValidationParameters(IConfiguration configuration)
-            => new()
+            services.ConfigureApplicationCookie(options =>
             {
-                ValidateIssuer = true,
-                ValidateAudience = true,
-                ValidateLifetime = true,
-                ValidateIssuerSigningKey = true,
-                ValidIssuer = configuration["Jwt:Issuer"],
-                ValidAudience = configuration["Jwt:Audience"],
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(configuration["Jwt:Key"]))
-            };
+                options.Cookie.HttpOnly = true;
+                options.SlidingExpiration = true;
+                options.ExpireTimeSpan = TimeSpan.FromDays(1);
+                options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+                options.Events.OnRedirectToLogin = context =>
+                {
+                    context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
+                    return Task.CompletedTask;
+                };
+                options.Events.OnRedirectToAccessDenied = context =>
+                {
+                    context.Response.StatusCode = (int)HttpStatusCode.Forbidden;
+                    return Task.CompletedTask;
+                };
+            });
 
-        public static bool IsJWTProvided(HttpContext context, out string jwtHeader)
-        {
-            jwtHeader = context.Request.Headers["Authorization"].FirstOrDefault();
-            return jwtHeader?.StartsWith("Bearer ") == true;
-        }
-
-        public static IServiceCollection AddAndUseJWTSchemaIfTokenProvided(this IServiceCollection services, IConfiguration configuration, string schema)
-        {
             services.AddAuthentication(options =>
             {
                 options.DefaultChallengeScheme = "smart";
@@ -62,7 +55,7 @@ namespace ApiTemplate.SharedKernel.Auth
                     }
                 };
 
-                options.TokenValidationParameters = GetTokenValidationParameters(configuration);
+                options.TokenValidationParameters = ApplicationSignInManager.GetTokenValidationParameters(configuration);
             })
             // Initially there was an idea to use custom policy to verify jwt token integrity + skip it's expiration time,
             // but due to limitation of asp net core (you can't use [AllowAnonymous] + [Authorize(Policy="SomePolicy")]) -> https://github.com/dotnet/aspnetcore/issues/29377
@@ -82,7 +75,7 @@ namespace ApiTemplate.SharedKernel.Auth
                     }
                 };
 
-                var tokenValidationParameters = GetTokenValidationParameters(configuration);
+                var tokenValidationParameters = ApplicationSignInManager.GetTokenValidationParameters(configuration);
                 tokenValidationParameters.ValidateLifetime = false; // WARN: Since token can be already expired
                 options.TokenValidationParameters = tokenValidationParameters;
             })
@@ -90,7 +83,8 @@ namespace ApiTemplate.SharedKernel.Auth
             {
                 options.ForwardDefaultSelector = context =>
                 {
-                    if (IsJWTProvided(context, out string jwtHeader))
+                    var jwtHeader = context.Request.Headers["Authorization"].FirstOrDefault();
+                    if (jwtHeader?.StartsWith("Bearer ") == true)
                     {
                         return JwtBearerDefaults.AuthenticationScheme;
                     }

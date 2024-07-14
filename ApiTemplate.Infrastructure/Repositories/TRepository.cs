@@ -1,25 +1,23 @@
-﻿using ApiTemplate.Application.Interfaces;
-using ApiTemplate.SharedKernel;
+﻿using ApiTemplate.Domain.Interfaces;
 using ApiTemplate.SharedKernel.PrimitivesExtensions;
 using EFCore.BulkExtensions;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
-namespace ApiTemplate.Application.Repository
+namespace ApiTemplate.Infrastructure.Repositories
 {
-    public class RepositoryBase<TEntity> : IRepo<TEntity> where TEntity : class
+    public class TRepository<TEntity> : IRepo<TEntity> where TEntity : class
     {
         /// <summary>
-        /// Min value when bulk must operation must be applied
+        /// Min value when bulk operation must be applied
         /// </summary>
         const int bulkFrom = 5;
 
         public DbContext Context { get; set; }
 
-        public RepositoryBase(IApplicationDbContext appContext)
+        public TRepository(DbContext appContext)
         {
-            Context = appContext.ProvideContext();
-            if (!Config.IsDev && !Config.IsPreStaging) Context.Database.SetCommandTimeout(60);
+            Context = appContext;
         }
 
         private DbSet<TEntity> _dbSet;
@@ -74,7 +72,7 @@ namespace ApiTemplate.Application.Repository
             var entry = Context.Entry(fromContext);
 
             var isTracked = fromContext != null && entry.State != EntityState.Detached;
-            if (isTracked) entry.State = EntityState.Detached; // WARN: Detach existed entry is the simplest way rather than assigning properties to an existing entry
+            if (isTracked) entry.State = EntityState.Detached; // WARN: Detach existed entry is more performant way rather than assigning properties to an existing entry
         }
 
         public virtual async Task DeleteAsync(TEntity entity, bool saveChanges = false, CancellationToken cancellationToken = default)

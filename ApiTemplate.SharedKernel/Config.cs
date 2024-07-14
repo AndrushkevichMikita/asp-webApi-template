@@ -2,14 +2,6 @@
 
 namespace ApiTemplate.SharedKernel
 {
-    public enum UseDb
-    {
-        Azure = 1,
-        MSSQL,
-        AWS,
-        Docker,
-    }
-
     public static class Config
     {
         public static readonly string Env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development";

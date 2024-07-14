@@ -1,17 +1,24 @@
 using ApiTemplate.Application;
 using ApiTemplate.Application.Configuration;
+using ApiTemplate.Domain;
 using ApiTemplate.Infrastructure;
+using ApiTemplate.Presentation.Web;
 using ApiTemplate.SharedKernel;
-using ApiTemplate.SharedKernel.FiltersAndAttributes;
-using ApiTemplate.SharedKernel.Extensions;
-using ApiTemplate.SharedKernel.Scheduler;
+using ApiTemplate.SharedKernel.CustomPolicy;
 using ApiTemplate.SharedKernel.ExceptionHandler;
 using ApiTemplate.SharedKernel.PipelineExtensions;
-using Microsoft.AspNetCore.HttpLogging;
-using Microsoft.OpenApi.Models;
+using ApiTemplate.SharedKernel.Scheduler;
+using Elastic.Apm.AspNetCore;
+using Elastic.Apm.DiagnosticSource;
+using Elastic.Apm.EntityFrameworkCore;
+using Elastic.Apm.SerilogEnricher;
+using Elastic.CommonSchema.Serilog;
+using Microsoft.AspNetCore.Identity;
+using Serilog;
+using Serilog.Exceptions;
+using Serilog.Sinks.Elasticsearch;
 using System.Reflection;
 using System.Text;
-using ApiTemplate.SharedKernel.CustomPolicy;
 
 try
 {
@@ -25,7 +32,21 @@ try
     // applying appsettings
     builder.Configuration.ApplyConfiguration();
     // configure Serilog + Elasticsearch as sink for Serilog
-    builder.Host.ConfigureSerilog(builder.Configuration);
+    builder.Host.UseSerilog((ctx, lc) => lc
+                .ReadFrom.Configuration(builder.Configuration)
+                .Enrich.FromLogContext()
+                .Enrich.WithExceptionDetails()
+                .Enrich.WithMachineName()
+                .Enrich.WithElasticApmCorrelationInfo()
+                .Enrich.WithProperty("Environment", Config.Env)
+                .WriteTo.Console()
+                .WriteTo.File(@"Logs\log.txt", rollingInterval: RollingInterval.Day, retainedFileCountLimit: 31)
+                .WriteTo.Elasticsearch(new ElasticsearchSinkOptions(new Uri(builder.Configuration["ElasticConfiguration:Uri"]))
+                {
+                    AutoRegisterTemplate = true,
+                    CustomFormatter = new EcsTextFormatter(),
+                    IndexFormat = $"{Assembly.GetExecutingAssembly().GetName().Name.ToLower().Replace(".", "-")}-{Config.Env?.ToLower().Replace(".", "-")}-{DateTime.UtcNow:yyyy-MM}"
+                }));
 
     builder.Services.AddScheduler(new List<SchedulerItem>
     {
@@ -34,111 +55,58 @@ try
 
     builder.Services.Configure<SMTPSettings>(builder.Configuration.GetSection(SMTPSettings.SMTP));
 
-    builder.Services.AddCommonServices();
+    builder.Services.AddPresentation(builder.Configuration)
+                    .AddApplicationServices()
+                    .AddInfrastructure(builder.Configuration)
+                    .AddDomain(builder.Configuration, IdentityConstants.ApplicationScheme)
+                    .AddSharedKernel();
 
-    builder.Services.AddApplicationServices();
+    var webApplication = builder.Build();
 
-    builder.Services.AddInfrastructureServices(builder.Configuration);
+    webApplication.UseHttpLogging();
 
-    builder.Services.AddRouting(options => options.LowercaseUrls = true);
-
-    builder.Services.AddSwaggerGen(c =>
-    {
-        c.SwaggerDoc("v1", new OpenApiInfo
-        {
-            Version = "v1",
-            Title = "API",
-            Description = "An ASP.NET Core Web API",
-            TermsOfService = new Uri("https://example.com/terms"),
-            Contact = new OpenApiContact
-            {
-                Name = "Example Contact",
-                Url = new Uri("https://example.com/contact")
-            },
-            License = new OpenApiLicense
-            {
-                Name = "Example License",
-                Url = new Uri("https://example.com/license")
-            }
-        });
-        var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-        c.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
-    });
-
-    builder.Services.AddHealthChecks();
-
-    builder.Services.AddResponseCompression(options =>
-    {
-        // it's risky for some attacks: https://docs.microsoft.com/en-us/aspnet/core/performance/response-compression?view=aspnetcore-3.0#compression-with-secure-protocol
-        options.EnableForHttps = false;
-    });
-
-    builder.Services.AddSession();
-
-    builder.Services.AddDistributedMemoryCache();
-
-    builder.Services.AddHsts(opt =>
-    {
-        opt.IncludeSubDomains = true;
-        opt.MaxAge = TimeSpan.FromDays(365);
-    });
-
-    builder.Services.AddControllers(config =>
-    {
-        config.Filters.Add(new MaxRequestSizeKBytes(Config.MaxRequestSizeBytes)); // singleton 
-    }).AddJsonDefaults();
-
-    builder.Services.AddHttpContextAccessor();
-
-    builder.Services.AddHttpLogging(logging =>
-    {
-        logging.LoggingFields = HttpLoggingFields.All;
-    });
-
-    var app = builder.Build();
-
-    app.UseHttpLogging();
-
-    app.AddElasticApm(builder.Configuration);
+    webApplication.UseElasticApm(builder.Configuration,
+                                 new HttpDiagnosticsSubscriber(),  /* Enable tracing of outgoing HTTP requests */
+                                 new EfCoreDiagnosticsSubscriber()); /* Enable tracing of database calls through EF Core*/
 
     // Configure the HTTP request pipeline.
-    if (app.Environment.IsDevelopment())
-        app.UseMigrationsEndPoint(); // Error-page with migrations that were not applied
+    if (webApplication.Environment.IsDevelopment())
+        webApplication.UseMigrationsEndPoint(); // Error-page with migrations that were not applied
     else
-        app.UseHsts();  // The default HSTS value is 30 days.
+        webApplication.UseHsts();  // The default HSTS value is 30 days.
 
-    app.UseHttpsRedirection();
+    webApplication.UseHttpsRedirection();
 
-    app.UseRouting();
+    webApplication.UseRouting();
 
     if (!Config.IsProd)
     {
-        app.UseSwagger(c =>
+        webApplication.UseSwagger(c =>
         {
             c.RouteTemplate = "api/{documentname}/swagger.json";
         });
         // Enable middleware to serve swagger-ui (HTML, JS, CSS, etc.),
         // specifying the Swagger JSON endpoint.
-        app.UseSwaggerUI(c =>
+        webApplication.UseSwaggerUI(c =>
         {
             c.SwaggerEndpoint("/api/v1/swagger.json", "asp-web-api template");
             c.RoutePrefix = "api";
         });
     }
 
-    app.UseAuthentication();
+    webApplication.UseAuthentication();
 
-    app.UseAuthorization();
+    webApplication.UseAuthorization();
 
-    app.UseSession();
+    webApplication.UseSession();
 
-    app.HandleExceptions();
+    webApplication.HandleExceptions();
 
-    app.UseResponseCaching();
-    app.UseResponseCompression();
-    app.UseCompressedStaticFiles(app.Environment, app.Services.GetRequiredService<IHttpContextAccessor>());
+    webApplication.UseResponseCaching();
+    webApplication.UseResponseCompression();
+    webApplication.UseCompressedStaticFiles(webApplication.Environment, webApplication.Services.GetRequiredService<IHttpContextAccessor>());
 
-    app.UseEndpoints(endpoints =>
+    webApplication.UseEndpoints(endpoints =>
     {
         // endPoint for SPA
         endpoints.MapFallbackToFile("index.html", new StaticFileOptions
@@ -173,9 +141,9 @@ try
                  .RequireAuthorization(nameof(IsUserLockedAuthHandler));
     });
 
-    await app.Services.ApplyDbMigrations(builder.Configuration);
+    await webApplication.Services.ApplyDbMigrations(builder.Configuration);
 
-    app.Run();
+    webApplication.Run();
 }
 catch (Exception ex)
 {

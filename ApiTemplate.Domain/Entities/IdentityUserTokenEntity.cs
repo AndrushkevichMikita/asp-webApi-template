@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace ApiTemplate.Application.Entities
+namespace ApiTemplate.Domain.Entities
 {
     [Table("AspNetUserTokens")]
     public class IdentityUserTokenEntity : IdentityUserToken<int>

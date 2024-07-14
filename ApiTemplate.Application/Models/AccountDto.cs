@@ -1,4 +1,4 @@
-﻿using ApiTemplate.Application.Entities;
+﻿using ApiTemplate.Domain.Entities;
 
 namespace ApiTemplate.Application.Models
 {

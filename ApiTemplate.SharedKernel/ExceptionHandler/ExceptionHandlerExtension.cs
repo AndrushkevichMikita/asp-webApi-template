@@ -21,7 +21,7 @@ namespace ApiTemplate.SharedKernel.ExceptionHandler
             httpContext.Response.StatusCode = exception.ErrorStatus switch
             {
                 ErrorStatus.InvalidData => StatusCodes.Status400BadRequest,
-                ErrorStatus.NotUnauthorized => StatusCodes.Status401Unauthorized,
+                ErrorStatus.Unauthorized => StatusCodes.Status401Unauthorized,
                 ErrorStatus.Forbidden => StatusCodes.Status403Forbidden,
                 ErrorStatus.NotFound => StatusCodes.Status404NotFound,
                 ErrorStatus.NotAcceptable => StatusCodes.Status406NotAcceptable,
