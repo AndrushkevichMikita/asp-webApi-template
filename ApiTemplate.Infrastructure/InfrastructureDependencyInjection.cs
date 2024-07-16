@@ -1,6 +1,5 @@
 ﻿using ApiTemplate.Domain.Entities;
 using ApiTemplate.Domain.Interfaces;
-using ApiTemplate.Domain.Services;
 using ApiTemplate.Infrastructure.Interceptors;
 using ApiTemplate.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Builder;
@@ -13,9 +12,10 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace ApiTemplate.Infrastructure
 {
-    public static class DependencyInjection
+    public static class InfrastructureDependencyInjection
     {
-        public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
+        public static IServiceCollection AddInfrastructure<TFactory>(this IServiceCollection services, IConfiguration configuration)
+            where TFactory : UserClaimsPrincipalFactory<ApplicationUserEntity, IdentityRole<int>>
         {
             services.AddDbContext<ApplicationDbContext>((sp, options) =>
             {
@@ -47,7 +47,7 @@ namespace ApiTemplate.Infrastructure
             }).AddRoles<IdentityRole<int>>()
               .AddEntityFrameworkStores<ApplicationDbContext>()
               .AddDefaultTokenProviders()
-              .AddClaimsPrincipalFactory<ApplicationUserClaimsPrincipalFactory>();
+              .AddClaimsPrincipalFactory<TFactory>();
 
             services.AddScoped(typeof(IRepo<>), typeof(TRepository<>));
             services.AddScoped<ISaveChangesInterceptor, UserEntityInterceptor>();

@@ -1,20 +1,26 @@
-﻿using ApiTemplate.Domain.Services;
+﻿using ApiTemplate.Application.Interfaces;
+using ApiTemplate.Application.Services;
+using ApiTemplate.Domain.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System.Net;
 
-namespace ApiTemplate.Domain
+namespace ApiTemplate.Application
 {
-    public static class DependencyInjection
+    public static class ApplicationDependencyInjection
     {
         public const string JWTWithNoExpirationSchema = nameof(JWTWithNoExpirationSchema);
 
-        public static IServiceCollection AddDomain(this IServiceCollection services, IConfiguration configuration, string schema)
+        public static IServiceCollection AddApplicationServices(this IServiceCollection services, IConfiguration configuration, string schema)
         {
+            services.AddSingleton<ISMTPService, SMTPService>();
+            services.AddScoped<IAccountService, AccountService>();
+            services.AddScoped<IEmailTemplateService, EmailTemplateService>();
             services.AddScoped<ApplicationSignInManager, ApplicationSignInManager>();
             services.AddScoped<ApplicationUserClaimsPrincipalFactory, ApplicationUserClaimsPrincipalFactory>();
+            services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
             services.ConfigureApplicationCookie(options =>
             {

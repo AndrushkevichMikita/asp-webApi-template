@@ -8,7 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace ApiTemplate.SharedKernel
 {
-    public static class DependencyInjection
+    public static class SharedKernelDependencyInjection
     {
         public static IServiceCollection AddSharedKernel(this IServiceCollection services)
         {

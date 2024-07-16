@@ -6,7 +6,7 @@ namespace ApiTemplate.Domain.Entities
     public class ApplicationUserEntity : IdentityUser<int>
     {
         [MaxLength(50)]
-        public string RefreshToken { get; set; }
+        public string? RefreshToken { get; set; }
         public DateTime Created { get; set; }
         public DateTime LastUpdated { get; set; }
         public DateTime? RefreshTokenExpiryTime { get; set; }

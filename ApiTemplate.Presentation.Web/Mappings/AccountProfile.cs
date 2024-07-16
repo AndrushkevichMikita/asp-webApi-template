@@ -1,5 +1,4 @@
-﻿using ApiTemplate.Application.Entities;
-using ApiTemplate.Application.Models;
+﻿using ApiTemplate.Application.Models;
 using ApiTemplate.Presentation.Web.Models;
 using AutoMapper;
 
@@ -13,6 +12,7 @@ namespace ApiTemplate.Presentation.Web.Mappings
             CreateMap<CreateAccountModel, AccountDto>();
             CreateMap<LoginAccountModel, AccountDto>();
             CreateMap<RefreshTokenModel, RefreshTokenDto>();
+            CreateMap<RefreshTokenDto, RefreshTokenModel>();
             CreateMap<AccountDto, AccountModel>();
         }
     }

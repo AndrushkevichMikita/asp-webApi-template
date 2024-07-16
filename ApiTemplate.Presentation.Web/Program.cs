@@ -1,6 +1,7 @@
 using ApiTemplate.Application;
 using ApiTemplate.Application.Configuration;
 using ApiTemplate.Domain;
+using ApiTemplate.Domain.Services;
 using ApiTemplate.Infrastructure;
 using ApiTemplate.Presentation.Web;
 using ApiTemplate.SharedKernel;
@@ -56,9 +57,9 @@ try
     builder.Services.Configure<SMTPSettings>(builder.Configuration.GetSection(SMTPSettings.SMTP));
 
     builder.Services.AddPresentation(builder.Configuration)
-                    .AddApplicationServices()
-                    .AddInfrastructure(builder.Configuration)
-                    .AddDomain(builder.Configuration, IdentityConstants.ApplicationScheme)
+                    .AddApplicationServices(builder.Configuration, IdentityConstants.ApplicationScheme)
+                    .AddInfrastructure<ApplicationUserClaimsPrincipalFactory>(builder.Configuration)
+                    .AddDomain()
                     .AddSharedKernel();
 
     var webApplication = builder.Build();
@@ -97,8 +98,6 @@ try
     webApplication.UseAuthentication();
 
     webApplication.UseAuthorization();
-
-    webApplication.UseSession();
 
     webApplication.HandleExceptions();
 

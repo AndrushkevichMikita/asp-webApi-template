@@ -1,4 +1,4 @@
-﻿using ApiTemplate.Application.Entities;
+﻿using ApiTemplate.Domain.Entities;
 using System.ComponentModel.DataAnnotations;
 
 namespace ApiTemplate.Presentation.Web.Models

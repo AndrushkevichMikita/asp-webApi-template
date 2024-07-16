@@ -1,4 +1,4 @@
-﻿using ApiTemplate.Application.Entities;
+﻿using ApiTemplate.Domain.Entities;
 using ApiTemplate.SharedKernel;
 using ApiTemplate.SharedKernel.ExceptionHandler;
 using Microsoft.AspNetCore.Authorization;

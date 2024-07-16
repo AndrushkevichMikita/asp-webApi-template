@@ -1,6 +1,6 @@
-﻿using ApiTemplate.Application.Entities;
-using ApiTemplate.Application.Models;
-using ApiTemplate.Application.Repository;
+﻿using ApiTemplate.Domain.Entities;
+using ApiTemplate.Domain.Interfaces;
+using ApiTemplate.Presentation.Web.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using System.Net.Http.Json;
@@ -13,23 +13,27 @@ namespace ApiTemplate.Presentation.Web.Tests.Integration.Account
     {
         public AccountTests(CustomWebApplicationFactory factory) : base(factory) { }
 
-        private async Task<HttpResponseMessage> SignUp(AccountSignInDto model)
+        private async Task<HttpResponseMessage> CreateAccount(CreateAccountModel model)
          => await HTTPClient.PostAsJsonAsync("api/account/signUp", model);
 
-        private async Task<HttpResponseMessage> SignIn(AccountSignInDto model)
+        private async Task<HttpResponseMessage> LoginAccount(LoginAccountModel model)
          => await HTTPClient.PostAsJsonAsync("api/account/signIn", model);
 
-        private async Task<HttpResponseMessage> SendDigitCode(AccountSignInDto model)
-         => await HTTPClient.PostAsJsonAsync("api/account/digitCode", model.Email);
+        private async Task<HttpResponseMessage> SendDigitCode(string email)
+         => await HTTPClient.PostAsJsonAsync("api/account/digitCode", email);
 
         private async Task<HttpResponseMessage> ConfirmUserEmail(string code)
          => await HTTPClient.PutAsJsonAsync("api/account/digitCode", code);
 
-        private async Task UpdateUserEmailConfirm(AccountSignInDto model, bool isConfirm)
+        private IRepo<ApplicationUserEntity> AccountRepo
+            => ServicesScope.ServiceProvider.GetRequiredService<IRepo<ApplicationUserEntity>>();
+
+        private async Task UpdateUserEmailConfirm(string email, bool isConfirm)
         {
-            var userRepo = ServicesScope.ServiceProvider.GetRequiredService<IRepo<ApplicationUserEntity>>();
-            var user = await userRepo.GetIQueryable().FirstOrDefaultAsync(x => x.Email == model.Email);
+            var userRepo = AccountRepo;
+            var user = await userRepo.GetIQueryable().FirstOrDefaultAsync(x => x.Email == email);
             if (user is null) return;
+
             user!.EmailConfirmed = isConfirm;
             await userRepo.UpdateAsync(user, true, CancellationToken.None, c => c.EmailConfirmed);
         }
@@ -38,9 +42,8 @@ namespace ApiTemplate.Presentation.Web.Tests.Integration.Account
         public async Task Should_Delete_Same_Unconfirmed_User()
         {
             // Arrange
-            var userModel = new AccountSignInDto()
+            var userModel = new CreateAccountModel()
             {
-                RememberMe = true,
                 LastName = "TestUp",
                 FirstName = "TestUp",
                 Password = "Vdvdrvrd65w!",
@@ -48,9 +51,9 @@ namespace ApiTemplate.Presentation.Web.Tests.Integration.Account
                 Role = RoleEnum.SuperAdmin,
             };
             // Act
-            await UpdateUserEmailConfirm(userModel, false);
-            var first = await SignUp(userModel);
-            var second = await SignUp(userModel);
+            await UpdateUserEmailConfirm(userModel.Email, false);
+            var first = await CreateAccount(userModel);
+            var second = await CreateAccount(userModel);
             // Assert
             Assert.True(first.IsSuccessStatusCode && second.IsSuccessStatusCode);
         }
@@ -59,20 +62,24 @@ namespace ApiTemplate.Presentation.Web.Tests.Integration.Account
         public async Task Should_SignOut_User()
         {
             // Arrange
-            var userModel = new AccountSignInDto()
+            var createModel = new CreateAccountModel()
             {
-                RememberMe = true,
                 LastName = "TestSignOut",
                 FirstName = "TestSignOut",
                 Password = "Vdvdrvrd65w!",
                 Email = "andruskevicnikitaSignOut05@gmail.com",
                 Role = RoleEnum.SuperAdmin,
             };
+            var loginModel = new LoginAccountModel()
+            {
+                Password = createModel.Password,
+                Email = createModel.Email
+            };
             // Act
-            await UpdateUserEmailConfirm(userModel, false);
-            await SignUp(userModel);
-            await UpdateUserEmailConfirm(userModel, true);
-            await SignIn(userModel);
+            await UpdateUserEmailConfirm(createModel.Email, false);
+            await CreateAccount(createModel);
+            await UpdateUserEmailConfirm(createModel.Email, true);
+            await LoginAccount(loginModel);
             var signOutRes1 = await HTTPClient.PostAsync("api/account/signOut", null);
             var signOutRes2 = await HTTPClient.PostAsync("api/account/signOut", null);
             // Assert
@@ -83,20 +90,24 @@ namespace ApiTemplate.Presentation.Web.Tests.Integration.Account
         public async Task Should_Not_Reach_Secure_Endpoint_Besides_SuperAdmin()
         {
             // Arrange
-            var userModel = new AccountSignInDto()
+            var createModel = new CreateAccountModel()
             {
-                RememberMe = true,
                 LastName = "TestSuper",
                 FirstName = "TestSuper",
                 Password = "Vdvdrvrd65w!",
                 Email = "andruskevicnikitaSuper05@gmail.com",
                 Role = RoleEnum.Admin,
             };
+            var loginModel = new LoginAccountModel()
+            {
+                Password = createModel.Password,
+                Email = createModel.Email
+            };
             // Act
-            await UpdateUserEmailConfirm(userModel, false);
-            var signUpR = await SignUp(userModel);
-            await UpdateUserEmailConfirm(userModel, true);
-            var signInR = await SignIn(userModel);
+            await UpdateUserEmailConfirm(createModel.Email, false);
+            var signUpR = await CreateAccount(createModel);
+            await UpdateUserEmailConfirm(createModel.Email, true);
+            var signInR = await LoginAccount(loginModel);
             var protectedByAuth = await HTTPClient.PostAsync("api/account/onlyForSupAdmin", null);
             // Assert
             Assert.True(signUpR.IsSuccessStatusCode && signInR.IsSuccessStatusCode && !protectedByAuth.IsSuccessStatusCode);
@@ -106,20 +117,24 @@ namespace ApiTemplate.Presentation.Web.Tests.Integration.Account
         public async Task Should_Reach_Secure_Endpoint_By_SuperAdmin()
         {
             // Arrange
-            var userModel = new AccountSignInDto()
+            var createModel = new CreateAccountModel()
             {
-                RememberMe = true,
                 LastName = "TestSuper",
                 FirstName = "TestSuper",
                 Password = "Vdvdrvrd65w!",
                 Email = "andruskevicnikitaSuper05@gmail.com",
                 Role = RoleEnum.SuperAdmin,
             };
+            var loginModel = new LoginAccountModel()
+            {
+                Password = createModel.Password,
+                Email = createModel.Email
+            };
             // Act
-            await UpdateUserEmailConfirm(userModel, false);
-            var signUpR = await SignUp(userModel);
-            await UpdateUserEmailConfirm(userModel, true);
-            var signInR = await SignIn(userModel);
+            await UpdateUserEmailConfirm(createModel.Email, false);
+            var signUpR = await CreateAccount(createModel);
+            await UpdateUserEmailConfirm(createModel.Email, true);
+            var signInR = await LoginAccount(loginModel);
             var protectedByAuth = await HTTPClient.PostAsync("api/account/onlyForSupAdmin", null);
             // Assert
             Assert.True(signUpR.IsSuccessStatusCode && signInR.IsSuccessStatusCode && protectedByAuth.IsSuccessStatusCode);
@@ -129,9 +144,8 @@ namespace ApiTemplate.Presentation.Web.Tests.Integration.Account
         public async Task Should_Confrim_User_Email()
         {
             // Arrange
-            var userModel = new AccountSignInDto()
+            var createModel = new CreateAccountModel()
             {
-                RememberMe = true,
                 LastName = "TestDigitCode",
                 FirstName = "TestDigitCode",
                 Password = "Vdvdrvrd65w!",
@@ -140,11 +154,11 @@ namespace ApiTemplate.Presentation.Web.Tests.Integration.Account
             };
             var userTokenRepo = ServicesScope.ServiceProvider.GetRequiredService<IRepo<IdentityUserTokenEntity>>();
             // Act
-            await UpdateUserEmailConfirm(userModel, false);
-            var signUpR = await SignUp(userModel);
-            var sendRes = await SendDigitCode(userModel);
+            await UpdateUserEmailConfirm(createModel.Email, false);
+            var signUpR = await CreateAccount(createModel);
+            var sendRes = await SendDigitCode(createModel.Email);
 
-            var isNewTokenAppears = await userTokenRepo.GetIQueryable().Where(x => x.User.Email == userModel.Email).FirstOrDefaultAsync();
+            var isNewTokenAppears = await userTokenRepo.GetIQueryable().Where(x => x.User.Email == createModel.Email).FirstOrDefaultAsync();
             var confirmRes = await ConfirmUserEmail(isNewTokenAppears!.Name);
             // Assert
             Assert.True(sendRes.IsSuccessStatusCode && confirmRes.IsSuccessStatusCode);
@@ -154,22 +168,26 @@ namespace ApiTemplate.Presentation.Web.Tests.Integration.Account
         public async Task Should_Delete_User()
         {
             // Arrange
-            var userModel = new AccountSignInDto()
+            var createModel = new CreateAccountModel()
             {
-                RememberMe = true,
                 LastName = "TestDelete",
                 FirstName = "TestDelete",
                 Password = "Vdvdrvrd65w!",
                 Email = "andruskevicnikitadelete05@gmail.com",
                 Role = RoleEnum.SuperAdmin,
             };
+            var loginModel = new LoginAccountModel()
+            {
+                Password = createModel.Password,
+                Email = createModel.Email
+            };
             // Act
-            await UpdateUserEmailConfirm(userModel, false);
-            var signUpR = await SignUp(userModel);
-            await UpdateUserEmailConfirm(userModel, true);
-            var signInR = await SignIn(userModel);
+            await UpdateUserEmailConfirm(createModel.Email, false);
+            var signUpR = await CreateAccount(createModel);
+            await UpdateUserEmailConfirm(createModel.Email, true);
+            var signInR = await LoginAccount(loginModel);
             using var requestMessage = new HttpRequestMessage(HttpMethod.Delete, "api/account");
-            requestMessage.Content = new StringContent(JsonSerializer.Serialize(userModel.Password), Encoding.UTF8, "application/json");
+            requestMessage.Content = new StringContent(JsonSerializer.Serialize(loginModel.Password), Encoding.UTF8, "application/json");
             var deleteR = await HTTPClient.SendAsync(requestMessage);
             // Assert
             Assert.True(signUpR.IsSuccessStatusCode && signInR.IsSuccessStatusCode && deleteR.IsSuccessStatusCode);

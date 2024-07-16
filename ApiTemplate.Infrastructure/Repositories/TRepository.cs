@@ -13,9 +13,9 @@ namespace ApiTemplate.Infrastructure.Repositories
         /// </summary>
         const int bulkFrom = 5;
 
-        public DbContext Context { get; set; }
+        public ApplicationDbContext Context { get; set; }
 
-        public TRepository(DbContext appContext)
+        public TRepository(ApplicationDbContext appContext)
         {
             Context = appContext;
         }

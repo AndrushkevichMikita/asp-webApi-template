@@ -7,7 +7,7 @@ using System.Reflection;
 
 namespace ApiTemplate.Presentation.Web
 {
-    public static class DependencyInjection
+    public static class WebDependencyInjection
     {
         public static IServiceCollection AddPresentation(this IServiceCollection services, IConfiguration configuration)
         {
