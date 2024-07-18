@@ -1,5 +1,5 @@
-﻿using ApiTemplate.Application.Configuration;
-using ApiTemplate.Application.Interfaces;
+﻿using ApiTemplate.Application.Interfaces;
+using ApiTemplate.Domain.Configuration;
 using ApiTemplate.SharedKernel.ExceptionHandler;
 using Microsoft.Extensions.Options;
 using System.Net.Mail;
@@ -8,9 +8,9 @@ namespace ApiTemplate.Application.Services
 {
     public class SMTPService : ISMTPService
     {
-        private readonly SMTPSettings _settings;
+        private readonly SMTPConfiguration _settings;
 
-        public SMTPService(IOptions<SMTPSettings> smtp)
+        public SMTPService(IOptions<SMTPConfiguration> smtp)
         {
             _settings = smtp.Value;
         }

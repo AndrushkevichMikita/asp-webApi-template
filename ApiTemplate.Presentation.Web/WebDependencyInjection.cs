@@ -11,7 +11,7 @@ namespace ApiTemplate.Presentation.Web
     {
         public static IServiceCollection AddPresentation(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+            services.AddAutoMapper(Assembly.GetExecutingAssembly());
 
             services.AddControllers(config =>
                     {

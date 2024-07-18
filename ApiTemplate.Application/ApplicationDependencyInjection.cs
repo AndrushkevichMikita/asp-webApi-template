@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System.Net;
+using System.Reflection;
 
 namespace ApiTemplate.Application
 {
@@ -20,7 +21,8 @@ namespace ApiTemplate.Application
             services.AddScoped<IEmailTemplateService, EmailTemplateService>();
             services.AddScoped<ApplicationSignInManager, ApplicationSignInManager>();
             services.AddScoped<ApplicationUserClaimsPrincipalFactory, ApplicationUserClaimsPrincipalFactory>();
-            services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
+            services.AddAutoMapper(Assembly.GetExecutingAssembly());
 
             services.ConfigureApplicationCookie(options =>
             {

@@ -1,5 +1,4 @@
 using ApiTemplate.Application;
-using ApiTemplate.Application.Configuration;
 using ApiTemplate.Domain;
 using ApiTemplate.Domain.Services;
 using ApiTemplate.Infrastructure;
@@ -54,12 +53,10 @@ try
         // new SchedulerItem { TaskType = typeof(SomeName) }, // WARN: It's example of registration
     });
 
-    builder.Services.Configure<SMTPSettings>(builder.Configuration.GetSection(SMTPSettings.SMTP));
-
     builder.Services.AddPresentation(builder.Configuration)
                     .AddApplicationServices(builder.Configuration, IdentityConstants.ApplicationScheme)
                     .AddInfrastructure<ApplicationUserClaimsPrincipalFactory>(builder.Configuration)
-                    .AddDomain()
+                    .AddDomain(builder.Configuration)
                     .AddSharedKernel();
 
     var webApplication = builder.Build();
