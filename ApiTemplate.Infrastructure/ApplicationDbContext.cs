@@ -7,14 +7,14 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace ApiTemplate.Infrastructure
 {
-    public class ApplicationDbContext : IdentityDbContext<ApplicationUserEntity,
+    public class ApplicationDbContext : IdentityDbContext<AccountEntity,
                                         IdentityRole<int>,
                                         int,
                                         IdentityUserClaim<int>,
                                         IdentityUserRole<int>,
                                         IdentityUserLogin<int>,
                                         IdentityRoleClaim<int>,
-                                        IdentityUserTokenEntity>
+                                        AccountTokenEntity>
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
@@ -38,7 +38,7 @@ namespace ApiTemplate.Infrastructure
         {
             base.OnModelCreating(builder);
 
-            builder.Entity<IdentityUserTokenEntity>().HasOne(x => x.User).WithMany(x => x.Tokens).HasForeignKey(x => x.UserId);
+            builder.Entity<AccountTokenEntity>().HasOne(x => x.User).WithMany(x => x.Tokens).HasForeignKey(x => x.UserId);
 
             UseUtc(builder);
         }

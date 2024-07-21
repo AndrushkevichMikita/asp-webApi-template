@@ -50,11 +50,9 @@ namespace ApiTemplate.Application.Services
             await _sptmService.SendAsync(model.UserEmail, "Confirmation code", html);
         }
 
-        private static ParallelOptions _parallelOptions = new() { MaxDegreeOfParallelism = 2 };
-
         public async Task SendDigitCodeParallelAsync(List<EmailDto> models)
         {
-            await Parallel.ForEachAsync(models, _parallelOptions, async (model, token) => await SendDigitCodeAsync(model));
+            await Parallel.ForEachAsync(models, async (model, token) => await SendDigitCodeAsync(model));
         }
     }
 }

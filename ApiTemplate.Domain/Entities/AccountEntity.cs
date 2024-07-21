@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ApiTemplate.Domain.Entities
 {
-    public class ApplicationUserEntity : IdentityUser<int>
+    public class AccountEntity : IdentityUser<int>
     {
         [MaxLength(50)]
         public string? RefreshToken { get; set; }
@@ -18,7 +18,7 @@ namespace ApiTemplate.Domain.Entities
         public string LastName { get; set; }
 
         public RoleEnum Role { get; set; }
-        public ICollection<IdentityUserTokenEntity> Tokens { get; set; }
+        public ICollection<AccountTokenEntity> Tokens { get; set; }
 
         public bool IsLocked() => LockoutEnabled && LockoutEnd?.UtcDateTime > DateTime.UtcNow;
     }

@@ -25,8 +25,8 @@ namespace ApiTemplate.Presentation.Web.Tests.Integration.Account
         private async Task<HttpResponseMessage> ConfirmUserEmail(string code)
          => await HTTPClient.PutAsJsonAsync("api/account/digitCode", code);
 
-        private IRepo<ApplicationUserEntity> AccountRepo
-            => ServicesScope.ServiceProvider.GetRequiredService<IRepo<ApplicationUserEntity>>();
+        private IRepo<AccountEntity> AccountRepo
+            => ServicesScope.ServiceProvider.GetRequiredService<IRepo<AccountEntity>>();
 
         private async Task UpdateUserEmailConfirm(string email, bool isConfirm)
         {
@@ -152,7 +152,7 @@ namespace ApiTemplate.Presentation.Web.Tests.Integration.Account
                 Email = "andruskevicnikitaDigitCode05@gmail.com",
                 Role = RoleEnum.SuperAdmin,
             };
-            var userTokenRepo = ServicesScope.ServiceProvider.GetRequiredService<IRepo<IdentityUserTokenEntity>>();
+            var userTokenRepo = ServicesScope.ServiceProvider.GetRequiredService<IRepo<AccountTokenEntity>>();
             // Act
             await UpdateUserEmailConfirm(createModel.Email, false);
             var signUpR = await CreateAccount(createModel);

@@ -4,15 +4,14 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace ApiTemplate.Domain.Entities
 {
     [Table("AspNetUserTokens")]
-    public class IdentityUserTokenEntity : IdentityUserToken<int>
+    public class AccountTokenEntity : IdentityUserToken<int>
     {
-        public ApplicationUserEntity User { get; set; }
+        public AccountEntity User { get; set; }
     }
 
     public enum TokenEnum
     {
-        JwtToken = 1,
-        PasswordToken,
+        PasswordToken = 1,
         EmailToken,
         SignUpToken,
         UnsubscribeSMS

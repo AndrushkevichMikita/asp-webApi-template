@@ -9,9 +9,9 @@ namespace CommandsService.Profiles
         public AccountProfile()
         {
             // Source => Target
-            CreateMap<ApplicationUserEntity, AccountDto>();
-            CreateMap<ApplicationUserEntity, AccountDto>();
-            CreateMap<AccountDto, ApplicationUserEntity>()
+            CreateMap<AccountEntity, AccountDto>();
+            CreateMap<AccountEntity, AccountDto>();
+            CreateMap<AccountDto, AccountEntity>()
                 .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.FirstName + " " + src.LastName));
         }
     }

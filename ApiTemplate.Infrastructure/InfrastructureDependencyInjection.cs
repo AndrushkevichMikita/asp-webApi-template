@@ -15,7 +15,7 @@ namespace ApiTemplate.Infrastructure
     public static class InfrastructureDependencyInjection
     {
         public static IServiceCollection AddInfrastructure<TFactory>(this IServiceCollection services, IConfiguration configuration)
-            where TFactory : UserClaimsPrincipalFactory<ApplicationUserEntity, IdentityRole<int>>
+            where TFactory : UserClaimsPrincipalFactory<AccountEntity, IdentityRole<int>>
         {
             services.AddDbContext<ApplicationDbContext>((sp, options) =>
             {
@@ -32,7 +32,7 @@ namespace ApiTemplate.Infrastructure
                 }
             });
 
-            services.AddDefaultIdentity<ApplicationUserEntity>(options =>
+            services.AddDefaultIdentity<AccountEntity>(options =>
             {
                 options.Password.RequireNonAlphanumeric = false;
                 options.Password.RequireDigit = true;

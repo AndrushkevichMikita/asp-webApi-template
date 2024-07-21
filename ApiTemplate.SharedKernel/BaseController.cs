@@ -19,9 +19,7 @@ namespace ApiTemplate.SharedKernel
     public abstract class BaseController<T> : ControllerBase where T : Enum
     {
         private CookieUser<T> _user;
-        /// <summary>
-        /// Return current authenticated user
-        /// </summary>
+
         public CookieUser<T> CurrentUser
         {
             get

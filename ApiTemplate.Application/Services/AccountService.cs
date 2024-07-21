@@ -11,13 +11,13 @@ namespace ApiTemplate.Application.Services
 {
     public class AccountService : IAccountService
     {
-        private readonly IRepo<IdentityUserTokenEntity> _userTokenRepo;
+        private readonly IRepo<AccountTokenEntity> _userTokenRepo;
         private readonly IEmailTemplateService _emailTemplateService;
         private readonly ApplicationSignInManager _signInManager;
         private readonly IMapper _mapper;
 
         public AccountService(IEmailTemplateService emailTemplateService,
-                              IRepo<IdentityUserTokenEntity> userTokenRepo,
+                              IRepo<AccountTokenEntity> userTokenRepo,
                               ApplicationSignInManager signManager,
                               IMapper mapper)
         {
@@ -29,12 +29,11 @@ namespace ApiTemplate.Application.Services
 
         private static string GenerateCode()
         {
-            var random = new Random();
-            var code = random.Next(1111, 9999).ToString("D4");
+            var code = new Random().Next(1111, 9999).ToString("D4");
             return code;
         }
 
-        private async Task<ApplicationUserEntity> DeleteSameNotConfirmed(string email)
+        private async Task<AccountEntity> DeleteSameNotConfirmed(string email)
         {
             var existingUser = await _signInManager.UserManager.FindByEmailAsync(email);
             if (existingUser == null) return null;
@@ -46,7 +45,7 @@ namespace ApiTemplate.Application.Services
             return existingUser;
         }
 
-        private async Task<RefreshTokenDto> CreateNewJwtPair(ApplicationUserEntity appUser)
+        private async Task<RefreshTokenDto> CreateNewJwtPair(AccountEntity appUser)
         {
             return new RefreshTokenDto
             {
@@ -73,7 +72,7 @@ namespace ApiTemplate.Application.Services
         {
             await DeleteSameNotConfirmed(model.Email);
 
-            var toInsert = _mapper.Map<ApplicationUserEntity>(model);
+            var toInsert = _mapper.Map<AccountEntity>(model);
             var res = await _signInManager.UserManager.CreateAsync(toInsert, model.Password);
             if (!res.Succeeded) throw new MyApplicationException(ErrorStatus.InvalidData, string.Join(" ", res.Errors.Select(c => c.Description)));
             await _signInManager.UserManager.AddToRoleAsync(toInsert, toInsert.Role.ToString());
@@ -89,8 +88,8 @@ namespace ApiTemplate.Application.Services
         public async Task SendDigitCodeByEmail(string email)
         {
             var appUser = await _signInManager.UserManager.FindByEmailAsync(email) ?? throw new MyApplicationException(ErrorStatus.NotFound, "User not found");
-
             var asString = TokenEnum.EmailToken.ToString();
+
             var userEmailTokens = await _userTokenRepo.GetIQueryable()
                                                       .Where(x => x.UserId == appUser.Id && x.LoginProvider == asString)
                                                       .ToListAsync();
@@ -98,7 +97,8 @@ namespace ApiTemplate.Application.Services
                 await _userTokenRepo.DeleteAsync(userEmailTokens);
 
             var digitCode = GenerateCode();
-            await _userTokenRepo.InsertAsync(new IdentityUserTokenEntity
+
+            await _userTokenRepo.InsertAsync(new AccountTokenEntity
             {
                 UserId = appUser.Id,
                 Name = digitCode,
@@ -106,12 +106,13 @@ namespace ApiTemplate.Application.Services
                 Value = await _signInManager.UserManager.GenerateEmailConfirmationTokenAsync(appUser)
             }, true);
 
-            await _emailTemplateService.SendDigitCodeParallelAsync(new List<EmailDto>{new() {
+            await _emailTemplateService.SendDigitCodeAsync(new EmailDto
+            {
                 UserEmail = appUser.Email,
                 DigitCode = digitCode,
                 FirstName = appUser.FirstName,
                 LastName = appUser.LastName
-            } });
+            });
         }
 
         public async Task ConfirmDigitCode(string digitCode)
