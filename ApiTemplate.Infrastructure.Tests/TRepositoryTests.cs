@@ -147,7 +147,7 @@ namespace ApiTemplate.Infrastructure.Tests
             var forDetach = await _repository.InsertAsync(entity, true);
 
             forDetach.FirstName = "First update";
-            await _repository.UpdateAsync(forDetach, true, CancellationToken.None, x=>x.FirstName);
+            await _repository.UpdateAsync(forDetach, true, CancellationToken.None, x => x.FirstName);
 
             _context.Entry(forDetach).State = EntityState.Detached;
 
@@ -159,37 +159,6 @@ namespace ApiTemplate.Infrastructure.Tests
             Assert.Equal("Second update", result.FirstName);
         }
 
-        [Fact]
-        public async Task UpdateAsync_MultipleEntities_UpdatesEntitiesInContext()
-        {
-            var entities = new List<AccountEntity>
-            {
-                 new() { Id = 1, FirstName = "Test1", LastName = "Test1" },
-                 new() { Id = 2, FirstName = "Test2", LastName = "Test2" }
-            };
-
-            await _repository.InsertAsync(entities, true);
-
-            entities.ForEach(x =>
-            {
-                x.FirstName = "First update";
-            });
-
-            await _repository.UpdateAsync(entities, true, CancellationToken.None);
-            var result1 = await _context.Set<AccountEntity>().ToListAsync();
-            Assert.NotNull(result1);
-            Assert.True(result1.All(x => x.FirstName == "First update"));
-
-            entities.ForEach(x =>
-            {
-                x.FirstName = "Second update";
-            });
-
-            await _repository.UpdateAsync(entities, true, CancellationToken.None);
-            var result2 = await _context.Set<AccountEntity>().ToListAsync();
-            Assert.NotNull(result2);
-            Assert.True(result2.All(x => x.FirstName == "Second update"));
-        }
 
         [Fact]
         public async Task UpdateAsync_SpecificFields_UpdatesEntityFieldsInContext()
@@ -208,6 +177,39 @@ namespace ApiTemplate.Infrastructure.Tests
             Assert.NotNull(result);
             Assert.Equal("Updated Test", result.FirstName);
             Assert.NotEqual("Updated Test", result.LastName);
+        }
+
+        [Fact]
+        public async Task UpdateAsync_MultipleEntities_UpdatesEntitiesInContext()
+        {
+            var entities = new List<AccountEntity>
+            {
+                 new() { Id = 1, FirstName = "Test1", LastName = "Test1" },
+                 new() { Id = 2, FirstName = "Test2", LastName = "Test2" }
+            };
+
+            await _repository.InsertAsync(entities, true);
+
+            entities.ForEach(x =>
+            {
+                _context.Entry(x).State = EntityState.Detached;
+                x.FirstName = "First update";
+            });
+
+            await _repository.UpdateAsync(entities, true, CancellationToken.None);
+            var result1 = await _context.Set<AccountEntity>().ToListAsync();
+            Assert.NotNull(result1);
+            Assert.True(result1.All(x => x.FirstName == "First update"));
+
+            entities.ForEach(x =>
+            {
+                x.FirstName = "Second update";
+            });
+
+            await _repository.UpdateAsync(entities, true, CancellationToken.None);
+            var result2 = await _context.Set<AccountEntity>().ToListAsync();
+            Assert.NotNull(result2);
+            Assert.True(result2.All(x => x.FirstName == "Second update"));
         }
 
         [Fact]
@@ -235,6 +237,45 @@ namespace ApiTemplate.Infrastructure.Tests
 
             entities.ForEach(x =>
             {
+                x.FirstName = "Second update";
+                x.LastName = "Second update";
+            });
+
+            await _repository.UpdateAsync(entities, true, CancellationToken.None, e => e.FirstName);
+            var result2 = await _context.Set<AccountEntity>().ToListAsync();
+
+            Assert.NotNull(result2);
+            Assert.True(result2.All(x => x.FirstName == "Second update"));
+            Assert.True(result2.All(x => x.LastName != "Second update"));
+        }
+
+        [Fact]
+        public async Task UpdateAsync_MultipleEntities_Detached_SpecificFields_UpdatesEntityFieldsInContext()
+        {
+            var entities = new List<AccountEntity>
+            {
+                 new() { Id = 1, FirstName = "Test1", LastName = "Test1" },
+                 new() { Id = 2, FirstName = "Test2", LastName = "Test2" }
+            };
+
+            await _repository.InsertAsync(entities, true);
+
+            entities.ForEach(x =>
+            {
+                _context.Entry(x).State = EntityState.Detached;
+                x.FirstName = "First update";
+                x.LastName = "First update";
+            });
+
+            await _repository.UpdateAsync(entities, true, CancellationToken.None, e => e.FirstName);
+            var result1 = await _context.Set<AccountEntity>().ToListAsync();
+            Assert.NotNull(result1);
+            Assert.True(result1.All(x => x.FirstName == "First update"));
+            Assert.True(result1.All(x => x.LastName != "First update"));
+
+            entities.ForEach(x =>
+            {
+                _context.Entry(x).State = EntityState.Detached;
                 x.FirstName = "Second update";
                 x.LastName = "Second update";
             });

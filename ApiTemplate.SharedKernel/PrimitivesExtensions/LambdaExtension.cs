@@ -6,7 +6,7 @@ namespace ApiTemplate.SharedKernel.PrimitivesExtensions
     public static class LambdaExtension
     {
         // from https://gist.github.com/sandord/400553/6562ebb3cf2767d6c1ad9474d6f04691ab6ca412
-        public static string GetMemberName<T>(this Expression<Func<T, object>> property)
+        public static string GetMemberName<T>(Expression<Func<T, object>> property)
         {
             MemberExpression memberExpression;
             LambdaExpression lambda = property;

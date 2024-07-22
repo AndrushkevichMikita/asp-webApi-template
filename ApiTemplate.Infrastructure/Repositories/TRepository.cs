@@ -2,7 +2,6 @@
 using ApiTemplate.SharedKernel.PrimitivesExtensions;
 using EFCore.BulkExtensions;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
 using System.Linq.Expressions;
 
 namespace ApiTemplate.Infrastructure.Repositories
@@ -12,7 +11,7 @@ namespace ApiTemplate.Infrastructure.Repositories
         /// <summary>
         /// Min value when bulk operation must be applied
         /// </summary>
-        const int bulkFrom = 5;
+        const int bulkOperationStartCount = 5;
 
         public ApplicationDbContext Context { get; set; }
 
@@ -96,7 +95,7 @@ namespace ApiTemplate.Infrastructure.Repositories
             if (items == null || items.Count < 1)
                 return;
 
-            if (items.Count >= bulkFrom && !offBulk)
+            if (items.Count >= bulkOperationStartCount && !offBulk)
                 await Context.BulkDeleteAsync(items, cancellationToken: cancellationToken);
             else
             {
@@ -114,7 +113,7 @@ namespace ApiTemplate.Infrastructure.Repositories
         {
             var keyValues = GetPrimaryKeyValues(entity);
             var existing = DbSet.Local.FirstOrDefault(e => GetPrimaryKeyValues(e).SequenceEqual(keyValues))
-                                 ?? throw new NullReferenceException("Entity not attached");
+                                                 ?? throw new NullReferenceException("Entity not attached");
 
             Context.Entry(existing).CurrentValues.SetValues(entity);
             if (saveChanges)
@@ -127,33 +126,32 @@ namespace ApiTemplate.Infrastructure.Repositories
         {
             if (entity == null) throw new ArgumentNullException(nameof(entity));
 
-            var entry = Context.Entry(entity);
-            // Attach the entity if not already tracked
-            if (entry.State == EntityState.Detached)
-            {
-                var keyValues = GetPrimaryKeyValues(entity);
-                var existingEntity = await DbSet.FindAsync(keyValues);
-                if (existingEntity != null)
-                {
-                    Context.Entry(existingEntity).CurrentValues.SetValues(entity);
-                    entry = Context.Entry(existingEntity);
-                }
-                else
-                {
-                    DbSet.Attach(entity);
-                    entry = Context.Entry(entity);
-                }
-            }
-
             if (fields.Length == 0)
             {
-                entry.State = EntityState.Modified;
+                DbSet.Update(entity);
             }
             else
             {
+                var entry = Context.Entry(entity);
+                // Attach the entity if not already tracked
+                if (entry.State == EntityState.Detached)
+                {
+                    var keyValues = GetPrimaryKeyValues(entity);
+                    var existingEntity = await DbSet.FindAsync(keyValues);
+                    if (existingEntity != null)
+                    {
+                        Context.Entry(existingEntity).CurrentValues.SetValues(entity);
+                        entry = Context.Entry(existingEntity);
+                    }
+                    else
+                    {
+                        DbSet.Attach(entity);
+                        entry = Context.Entry(entity);
+                    }
+                }
                 foreach (var property in entry.Properties)
                 {
-                    property.IsModified = fields.Any(f => property.Metadata.Name == f.GetMemberName());
+                    property.IsModified = fields.Any(f => property.Metadata.Name == LambdaExtension.GetMemberName(f));
                 }
             }
 
@@ -161,24 +159,107 @@ namespace ApiTemplate.Infrastructure.Repositories
                 await Context.SaveChangesAsync(cancellationToken);
         }
 
+        private async Task<List<TEntity>> FindEntitiesAsync(IEnumerable<object[]> keyValuesList)
+        {
+            var keyProperties = Context.Model.FindEntityType(typeof(TEntity)).FindPrimaryKey().Properties;
+            var keyPropertiesNames = keyProperties.Select(p => p.Name).ToList();
+
+            // Convert key values to dictionary for easier comparison
+            var keyValuesDict = keyValuesList.ToDictionary(
+                keyValues => string.Join(",", keyValues),
+                keyValues => keyValues
+            );
+
+            // Get the local entities
+            var localEntities = DbSet.Local.Where(entity =>
+            {
+                var entityKeyValues = keyPropertiesNames.Select(name => Context.Entry(entity).Property(name).CurrentValue).ToArray();
+                var key = string.Join(",", entityKeyValues);
+                return keyValuesDict.ContainsKey(key);
+            }).ToList();
+
+            // Remove found keys from the dictionary
+            foreach (var localEntity in localEntities)
+            {
+                var entityKeyValues = keyPropertiesNames.Select(name => Context.Entry(localEntity).Property(name).CurrentValue).ToArray();
+                var key = string.Join(",", entityKeyValues);
+                keyValuesDict.Remove(key);
+            }
+
+            // Remaining keys need to be queried from the database
+            if (keyValuesDict.Count > 0)
+            {
+                var parameter = Expression.Parameter(typeof(TEntity));
+                Expression predicate = Expression.Constant(false);
+
+                foreach (var keyValues in keyValuesDict.Values)
+                {
+                    Expression keyPredicate = Expression.Constant(true);
+                    for (int i = 0; i < keyProperties.Count; i++)
+                    {
+                        var keyProperty = keyProperties[i];
+                        var keyValue = Expression.Constant(keyValues[i]);
+                        var propertyAccess = Expression.Property(parameter, keyProperty.Name);
+                        var equality = Expression.Equal(propertyAccess, keyValue);
+                        keyPredicate = Expression.AndAlso(keyPredicate, equality);
+                    }
+                    predicate = Expression.OrElse(predicate, keyPredicate);
+                }
+
+                var lambda = Expression.Lambda<Func<TEntity, bool>>(predicate, parameter);
+                var queriedEntities = await DbSet.Where(lambda).ToListAsync();
+                localEntities.AddRange(queriedEntities);
+            }
+
+            return localEntities;
+        }
+
         public virtual async Task UpdateAsync<TList>(TList entities, bool saveChanges = false, CancellationToken cancellationToken = default, params Expression<Func<TEntity, object>>[] fields) where TList : IList<TEntity>
         {
-            var partialUpdate = fields.Length > 0;
-            var fitToBulk = entities.Count >= bulkFrom;
-            if (fitToBulk)
-                await Context.BulkUpdateAsync(entities, partialUpdate ? options => options.PropertiesToInclude = fields.Select((lambda) => lambda.GetMemberName()).ToList() : null);
+            if (entities == null) throw new ArgumentNullException(nameof(entities));
 
+            var isPartialUpdate = fields.Length > 0;
+            if (entities.Count >= bulkOperationStartCount)
+            {
+                await Context.BulkUpdateAsync(entities,
+                                              isPartialUpdate ? options => options.PropertiesToInclude = fields.Select(LambdaExtension.GetMemberName).ToList()
+                                                              : null);
+            }
             else
             {
-                //foreach (var entity in entities)
-                //    AttachIfNotExist(entity);
-
-                if (!partialUpdate)
+                if (!isPartialUpdate)
+                {
                     DbSet.UpdateRange(entities);
+                }
                 else
-                    foreach (var e in entities)
-                        foreach (var p in fields)
-                            Context.Entry(e).Property(p).IsModified = true;
+                {
+                    var keyValuesList = entities.Select(GetPrimaryKeyValues).ToList();
+                    var existingEntities = await FindEntitiesAsync(keyValuesList);
+
+                    var keyProperties = Context.Model.FindEntityType(typeof(TEntity)).FindPrimaryKey().Properties;
+                    foreach (var entity in entities)
+                    {
+                        var keyValues = GetPrimaryKeyValues(entity);
+                        var existingEntity = existingEntities.FirstOrDefault(e => keyProperties.Select(p => p.PropertyInfo.GetValue(e)).SequenceEqual(keyValues));
+
+                        if (existingEntity != null)
+                        {
+                            Context.Entry(existingEntity).CurrentValues.SetValues(entity);
+                        }
+                        else
+                        {
+                            DbSet.Attach(entity);
+                            existingEntity = entity;
+                        }
+
+                        var entry = Context.Entry(existingEntity);
+
+                        foreach (var property in entry.Properties)
+                        {
+                            property.IsModified = fields.Any(f => property.Metadata.Name == LambdaExtension.GetMemberName(f));
+                        }
+                    }
+                }
             }
 
             if (saveChanges)
