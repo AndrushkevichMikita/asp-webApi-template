@@ -2,6 +2,7 @@
 using ApiTemplate.SharedKernel.PrimitivesExtensions;
 using EFCore.BulkExtensions;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
 using System.Linq.Expressions;
 
 namespace ApiTemplate.Infrastructure.Repositories
@@ -30,22 +31,25 @@ namespace ApiTemplate.Infrastructure.Repositories
             }
         }
 
-        #region Regular Members
+        private object[] GetPrimaryKeyValues(TEntity entity)
+        {
+            var keyProperties = Context.Model.FindEntityType(typeof(TEntity)).FindPrimaryKey().Properties;
+            return keyProperties.Select(p => p.PropertyInfo.GetValue(entity)).ToArray();
+        }
+
         public virtual IQueryable<TEntity> GetIQueryable(bool asNoTracking)
         {
-            var r = GetIQueryable();
             if (asNoTracking)
-                return r.AsNoTracking();
-            return r;
+                return GetIQueryable().AsNoTracking();
+
+            return GetIQueryable();
         }
 
         public virtual IQueryable<TEntity> GetIQueryable()
         {
             return DbSet.AsQueryable();
         }
-        #endregion
 
-        #region Async Members
         public virtual async Task<TEntity> InsertAsync(TEntity entity, bool saveChanges = false, CancellationToken cancellationToken = default)
         {
             var rtn = await DbSet.AddAsync(entity, cancellationToken);
@@ -66,23 +70,22 @@ namespace ApiTemplate.Infrastructure.Repositories
             return entities;
         }
 
-        private void DetachIfExist(TEntity entity)
-        {
-            var fromContext = DbSet.Local.FirstOrDefault(entity);
-            var entry = Context.Entry(fromContext);
-
-            var isTracked = fromContext != null && entry.State != EntityState.Detached;
-            if (isTracked) entry.State = EntityState.Detached; // WARN: Detach existed entry is more performant way rather than assigning properties to an existing entry
-        }
-
         public virtual async Task DeleteAsync(TEntity entity, bool saveChanges = false, CancellationToken cancellationToken = default)
         {
-            var fromContext = DbSet.Local.FirstOrDefault(entity);
-            var entry = Context.Entry(fromContext);
-
-            var isTracked = fromContext != null && entry.State != EntityState.Detached;
-            if (isTracked) entry.State = EntityState.Deleted;
-            else DbSet.Remove(entity);
+            var existing = DbSet.Local.FirstOrDefault(e => GetPrimaryKeyValues(e).SequenceEqual(GetPrimaryKeyValues(entity)));
+            if (existing is not null)
+            {
+                var entry = Context.Entry(existing);
+                var isTracked = entry != null && entry.State != EntityState.Detached;
+                if (isTracked)
+                {
+                    entry.State = EntityState.Deleted;
+                }
+            }
+            else
+            {
+                DbSet.Remove(entity);
+            }
 
             if (saveChanges)
                 await Context.SaveChangesAsync(cancellationToken);
@@ -97,8 +100,9 @@ namespace ApiTemplate.Infrastructure.Repositories
                 await Context.BulkDeleteAsync(items, cancellationToken: cancellationToken);
             else
             {
-                foreach (var entity in items)
-                    DetachIfExist(entity);
+                //foreach (var entity in items)
+                //    DetachIfExist(entity);
+
                 DbSet.RemoveRange(items);
             }
 
@@ -108,24 +112,53 @@ namespace ApiTemplate.Infrastructure.Repositories
 
         public virtual async Task<TEntity> UpdateAttachedAsync(TEntity entity, bool saveChanges = false, CancellationToken cancellationToken = default)
         {
-            var exist = DbSet.Local.FirstOrDefault(entity) ?? throw new NullReferenceException("Entity not attached");
-            Context.Entry(exist).CurrentValues.SetValues(entity);
+            var keyValues = GetPrimaryKeyValues(entity);
+            var existing = DbSet.Local.FirstOrDefault(e => GetPrimaryKeyValues(e).SequenceEqual(keyValues))
+                                 ?? throw new NullReferenceException("Entity not attached");
+
+            Context.Entry(existing).CurrentValues.SetValues(entity);
             if (saveChanges)
                 await Context.SaveChangesAsync(cancellationToken);
-            return exist;
+
+            return existing;
         }
 
         public virtual async Task UpdateAsync(TEntity entity, bool saveChanges = false, CancellationToken cancellationToken = default, params Expression<Func<TEntity, object>>[] fields)
         {
-            DetachIfExist(entity);
-            var s = DbSet.Attach(entity);
-            if (fields.Length < 1)
-                s.State = EntityState.Modified;
-            else
-                foreach (var p in fields)
-                    s.Property(p).IsModified = true;
+            if (entity == null) throw new ArgumentNullException(nameof(entity));
 
-            if (saveChanges) await Context.SaveChangesAsync(cancellationToken);
+            var entry = Context.Entry(entity);
+            // Attach the entity if not already tracked
+            if (entry.State == EntityState.Detached)
+            {
+                var keyValues = GetPrimaryKeyValues(entity);
+                var existingEntity = await DbSet.FindAsync(keyValues);
+                if (existingEntity != null)
+                {
+                    Context.Entry(existingEntity).CurrentValues.SetValues(entity);
+                    entry = Context.Entry(existingEntity);
+                }
+                else
+                {
+                    DbSet.Attach(entity);
+                    entry = Context.Entry(entity);
+                }
+            }
+
+            if (fields.Length == 0)
+            {
+                entry.State = EntityState.Modified;
+            }
+            else
+            {
+                foreach (var property in entry.Properties)
+                {
+                    property.IsModified = fields.Any(f => property.Metadata.Name == f.GetMemberName());
+                }
+            }
+
+            if (saveChanges)
+                await Context.SaveChangesAsync(cancellationToken);
         }
 
         public virtual async Task UpdateAsync<TList>(TList entities, bool saveChanges = false, CancellationToken cancellationToken = default, params Expression<Func<TEntity, object>>[] fields) where TList : IList<TEntity>
@@ -137,10 +170,9 @@ namespace ApiTemplate.Infrastructure.Repositories
 
             else
             {
-                foreach (var entity in entities) // WARN: DbSet.Local.Where(x=> entities.Contains(entity)) don't work
-                    DetachIfExist(entity);
+                //foreach (var entity in entities)
+                //    AttachIfNotExist(entity);
 
-                DbSet.AttachRange(entities);
                 if (!partialUpdate)
                     DbSet.UpdateRange(entities);
                 else
@@ -152,7 +184,6 @@ namespace ApiTemplate.Infrastructure.Repositories
             if (saveChanges)
                 await Context.SaveChangesAsync(cancellationToken);
         }
-        #endregion
 
         private bool disposed = false;
         protected virtual void Dispose(bool disposing)

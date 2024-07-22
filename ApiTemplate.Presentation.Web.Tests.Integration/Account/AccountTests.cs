@@ -1,6 +1,8 @@
 ﻿using ApiTemplate.Domain.Entities;
 using ApiTemplate.Domain.Interfaces;
+using ApiTemplate.Infrastructure.Repositories;
 using ApiTemplate.Presentation.Web.Models;
+using Elastic.Apm.Api;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using System.Net.Http.Json;
@@ -36,6 +38,41 @@ namespace ApiTemplate.Presentation.Web.Tests.Integration.Account
 
             user!.EmailConfirmed = isConfirm;
             await userRepo.UpdateAsync(user, true, CancellationToken.None, c => c.EmailConfirmed);
+        }
+
+        [Fact]
+        public async Task UpdateAsync_SpecificFields_UpdatesEntityFieldsInContext()
+        {
+            // Arrange
+            var _repository = AccountRepo;
+            var email = "andruskevicnikit@@aUp05@gmail.com";
+            var existed = await _repository.GetIQueryable().Where(c => c.Email == email).FirstAsync();
+            await _repository.DeleteAsync(existed, true, CancellationToken.None);
+
+            var entity = new AccountEntity()
+            {
+                LastName = "TestUp",
+                FirstName = "TestUp",
+                Email = email,
+                Role = RoleEnum.SuperAdmin,
+            };
+
+            // Act
+            await _repository.InsertAsync(entity, true);
+
+            entity.FirstName = "Updated Test";
+            entity.LastName = "Updated Test!!!5";
+            await _repository.UpdateAsync(entity, true, CancellationToken.None, e => e.FirstName);
+
+            var result = await _repository.GetIQueryable().Where(c=>c.Email == email).FirstAsync();
+
+            var gg =Factory.Services.CreateScope().ServiceProvider.GetRequiredService<IRepo<AccountEntity>>();
+            var result1 = await gg.GetIQueryable().Where(c => c.Email == email).FirstAsync();
+            var result2 = await gg.GetIQueryable().Where(c => c.Email == email).FirstAsync();
+
+            Assert.NotNull(result);
+            Assert.Equal("Updated Test", result.FirstName);
+            Assert.NotEqual("Updated Test!!!5", result.LastName);
         }
 
         [Fact]

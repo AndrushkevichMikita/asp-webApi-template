@@ -144,7 +144,7 @@ namespace ApiTemplate.Application.Tests
             userManagerMock.Setup(x => x.FindByEmailAsync(email))
                 .ReturnsAsync(accountEntity);
 
-            var dummyQuery = IQueryableExtension.AsAsyncQueryable(new List<AccountTokenEntity>() { new() { UserId = 1 } });
+            var dummyQuery = IQueryableExtension.AsAsyncQueryable(new List<AccountTokenEntity>() { new() });
             _userTokenRepoMock.Setup(x => x.GetIQueryable()).Returns(dummyQuery);
 
             userManagerMock.Setup(x => x.GenerateEmailConfirmationTokenAsync(accountEntity))

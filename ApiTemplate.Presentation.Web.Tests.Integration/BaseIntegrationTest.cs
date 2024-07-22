@@ -16,10 +16,12 @@ namespace ApiTemplate.Presentation.Web.Tests.Integration
     public abstract class BaseIntegrationTest : IClassFixture<CustomWebApplicationFactory>
     {
         public readonly IServiceScope ServicesScope;
+        public readonly CustomWebApplicationFactory Factory;
         public readonly HttpClient HTTPClient;
 
         protected BaseIntegrationTest(CustomWebApplicationFactory factory)
         {
+            Factory = factory;
             ServicesScope = factory.Services.CreateScope();
             HTTPClient = factory.CreateClient(new WebApplicationFactoryClientOptions
             {
