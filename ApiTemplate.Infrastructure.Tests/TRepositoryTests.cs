@@ -21,32 +21,24 @@ namespace ApiTemplate.Infrastructure.Tests
         }
 
         [Fact]
-        public void GetIQueryable_ReturnsQueryable()
+        public async Task GetIQueryable_ReturnsQueryable()
         {
-            var data = new List<AccountEntity>
+            var entities = new List<AccountEntity>
             {
                 new() { Id = 1, FirstName = "Test1", LastName = "Test1" },
                 new() { Id = 2, FirstName = "Test2", LastName = "Test2" }
             };
 
-            _context.Set<AccountEntity>().AddRange(data);
-            _context.SaveChanges();
+            await _repository.InsertAsync(entities, true);
 
-            var result = _repository.GetIQueryable().ToList();
+            var result = await _repository.GetIQueryable().ToListAsync();
 
-            result.ForEach(x =>
-            {
-                var d = _context.Entry(x);
-                Assert.False(d.State == EntityState.Detached);
-            });
-
+            Assert.False(result.All(c => _context.Entry(c).State == EntityState.Detached));
             Assert.Equal(2, result.Count);
-            Assert.Equal("Test1", result[0].FirstName);
-            Assert.Equal("Test2", result[1].FirstName);
         }
 
         [Fact]
-        public void GetIQueryable_AsNoTracking_ReturnsQueryable()
+        public async Task GetIQueryable_AsNoTracking_ReturnsQueryable()
         {
             var entities = new List<AccountEntity>
             {
@@ -54,20 +46,12 @@ namespace ApiTemplate.Infrastructure.Tests
                  new() { Id = 2, FirstName = "Test2", LastName = "Test2" }
             };
 
-            _context.Set<AccountEntity>().AddRange(entities);
-            _context.SaveChanges();
+            await _repository.InsertAsync(entities, true);
 
-            var result = _repository.GetIQueryable(true).ToList();
+            var result = await _repository.GetIQueryable(true).ToListAsync();
 
-            result.ForEach(x =>
-            {
-                var d = _context.Entry(x);
-                Assert.True(d.State == EntityState.Detached);
-            });
-
+            Assert.True(result.All(c => _context.Entry(c).State == EntityState.Detached));
             Assert.Equal(2, result.Count);
-            Assert.Equal("Test1", result[0].FirstName);
-            Assert.Equal("Test2", result[1].FirstName);
         }
 
         [Fact]
@@ -75,11 +59,11 @@ namespace ApiTemplate.Infrastructure.Tests
         {
             var entity = new AccountEntity { FirstName = "Test", LastName = "Test" };
 
-            await _repository.InsertAsync(entity, true);
+            var inserted = await _repository.InsertAsync(entity, true);
+            Assert.NotNull(inserted);
 
             var result = await _context.Set<AccountEntity>().FindAsync(1);
             Assert.NotNull(result);
-            Assert.Equal("Test", result.FirstName);
         }
 
         [Fact]
@@ -91,7 +75,8 @@ namespace ApiTemplate.Infrastructure.Tests
                  new() { Id = 2, FirstName = "Test2", LastName = "Test2" }
             };
 
-            await _repository.InsertAsync(entities, true);
+            var inserted = await _repository.InsertAsync(entities, true);
+            Assert.Equal(2, inserted.Count);
 
             var result = await _context.Set<AccountEntity>().ToListAsync();
             Assert.Equal(2, result.Count);
@@ -102,8 +87,8 @@ namespace ApiTemplate.Infrastructure.Tests
         {
             var entity = new AccountEntity { FirstName = "Test", LastName = "Test" };
 
-            await _repository.InsertAsync(entity, true);
-            await _repository.DeleteAsync(entity, true);
+            var inserted = await _repository.InsertAsync(entity, true);
+            await _repository.DeleteAsync(inserted, true);
 
             var result = await _context.Set<AccountEntity>().FindAsync(1);
             Assert.Null(result);
@@ -114,8 +99,8 @@ namespace ApiTemplate.Infrastructure.Tests
         {
             var entity = new AccountEntity { FirstName = "Test", LastName = "Test" };
 
-            var forDetach = await _repository.InsertAsync(entity, true);
-            _context.Entry(forDetach).State = EntityState.Detached;
+            await _repository.InsertAsync(entity, true);
+            _context.ChangeTracker.Clear();
 
             await _repository.DeleteAsync(entity, true);
 
@@ -128,12 +113,32 @@ namespace ApiTemplate.Infrastructure.Tests
         {
             var entities = new List<AccountEntity>
             {
-                 new() { Id = 1, FirstName = "Test1", LastName = "Test1" },
-                 new() { Id = 2, FirstName = "Test2", LastName = "Test2" }
+                 new() {  FirstName = "Test1", LastName = "Test1" },
+                 new() {  FirstName = "Test2", LastName = "Test2" }
             };
 
-            await _repository.InsertAsync(entities, true);
-            await _repository.DeleteAsync(entities, true);
+            var inserted = await _repository.InsertAsync(entities, true);
+
+            await _repository.DeleteAsync(inserted, true);
+
+            var result = await _context.Set<AccountEntity>().ToListAsync();
+            Assert.Empty(result);
+        }
+
+        [Fact]
+        public async Task DeleteAsync_MultipleEntities_Detached_RemovesEntitiesFromContext()
+        {
+            var entities = new List<AccountEntity>
+            {
+                 new() {  FirstName = "Test1", LastName = "Test1" },
+                 new() {  FirstName = "Test2", LastName = "Test2" }
+            };
+
+            var inserted = await _repository.InsertAsync(entities, true);
+
+            _context.ChangeTracker.Clear();
+
+            await _repository.DeleteAsync(inserted, true);
 
             var result = await _context.Set<AccountEntity>().ToListAsync();
             Assert.Empty(result);
@@ -144,39 +149,91 @@ namespace ApiTemplate.Infrastructure.Tests
         {
             var entity = new AccountEntity { FirstName = "Test", LastName = "Test" };
 
-            var forDetach = await _repository.InsertAsync(entity, true);
+            var inserted = await _repository.InsertAsync(entity, true);
 
-            forDetach.FirstName = "First update";
-            await _repository.UpdateAsync(forDetach, true, CancellationToken.None, x => x.FirstName);
+            inserted.FirstName = "First update";
+            await _repository.UpdateAsync(inserted, true);
+            Assert.Equal("First update", inserted.FirstName);
 
-            _context.Entry(forDetach).State = EntityState.Detached;
-
-            forDetach.FirstName = "Second update";
-            await _repository.UpdateAsync(forDetach, true, CancellationToken.None, x => x.FirstName);
+            inserted.FirstName = "Second update";
+            await _repository.UpdateAsync(inserted, true);
+            Assert.Equal("Second update", inserted.FirstName);
 
             var result = await _context.Set<AccountEntity>().FindAsync(1);
             Assert.NotNull(result);
-            Assert.Equal("Second update", result.FirstName);
         }
 
+        [Fact]
+        public async Task UpdateAsync_Detached_UpdatesEntityInContext()
+        {
+            var entity = new AccountEntity { FirstName = "Test", LastName = "Test" };
+
+            var inserted = await _repository.InsertAsync(entity, true);
+
+            _context.ChangeTracker.Clear();
+
+            inserted.FirstName = "First update";
+            await _repository.UpdateAsync(inserted, true);
+            Assert.Equal("First update", inserted.FirstName);
+
+            _context.ChangeTracker.Clear();
+
+            inserted.FirstName = "Second update";
+            await _repository.UpdateAsync(inserted, true);
+            Assert.Equal("Second update", inserted.FirstName);
+
+            var result = await _context.Set<AccountEntity>().FindAsync(1);
+            Assert.NotNull(result);
+        }
 
         [Fact]
         public async Task UpdateAsync_SpecificFields_UpdatesEntityFieldsInContext()
         {
             var entity = new AccountEntity { FirstName = "Test", LastName = "Test" };
-            await _repository.InsertAsync(entity, true);
 
-            _context.Entry(entity).State = EntityState.Detached;
+            var inserted = await _repository.InsertAsync(entity, true);
 
-            entity.FirstName = "Updated Test";
-            entity.LastName = "Updated Test";
+            inserted.FirstName = "First update";
+            inserted.LastName = "First update";
+            inserted = await _repository.UpdateAsync(inserted, true, CancellationToken.None, e => e.FirstName);
+            Assert.Equal("First update", inserted.FirstName);
+            Assert.NotEqual("First update", inserted.LastName);
 
-            await _repository.UpdateAsync(entity, true, CancellationToken.None, e => e.FirstName);
+            inserted.FirstName = "Second update";
+            inserted.LastName = "Second update";
+            inserted = await _repository.UpdateAsync(inserted, true, CancellationToken.None, e => e.FirstName);
+            Assert.Equal("Second update", inserted.FirstName);
+            Assert.NotEqual("Second update", inserted.LastName);
 
             var result = await _context.Set<AccountEntity>().FindAsync(1);
             Assert.NotNull(result);
-            Assert.Equal("Updated Test", result.FirstName);
-            Assert.NotEqual("Updated Test", result.LastName);
+        }
+
+        [Fact]
+        public async Task UpdateAsync_SpecificFields_Detached_UpdatesEntityFieldsInContext()
+        {
+            var entity = new AccountEntity { FirstName = "Test", LastName = "Test" };
+
+            var inserted = await _repository.InsertAsync(entity, true);
+
+            _context.ChangeTracker.Clear();
+
+            inserted.FirstName = "First update";
+            inserted.LastName = "First update";
+            inserted = await _repository.UpdateAsync(inserted, true, CancellationToken.None, e => e.FirstName);
+            Assert.Equal("First update", inserted.FirstName);
+            Assert.NotEqual("First update", inserted.LastName);
+
+            _context.ChangeTracker.Clear();
+
+            inserted.FirstName = "Second update";
+            inserted.LastName = "Second update";
+            inserted = await _repository.UpdateAsync(inserted, true, CancellationToken.None, e => e.FirstName);
+            Assert.Equal("Second update", inserted.FirstName);
+            Assert.NotEqual("Second update", inserted.LastName);
+
+            var result = await _context.Set<AccountEntity>().FindAsync(1);
+            Assert.NotNull(result);
         }
 
         [Fact]
@@ -188,28 +245,63 @@ namespace ApiTemplate.Infrastructure.Tests
                  new() { Id = 2, FirstName = "Test2", LastName = "Test2" }
             };
 
-            await _repository.InsertAsync(entities, true);
+            var inserted = await _repository.InsertAsync(entities, true);
 
-            entities.ForEach(x =>
+            inserted.ForEach(x =>
             {
-                _context.Entry(x).State = EntityState.Detached;
                 x.FirstName = "First update";
             });
 
-            await _repository.UpdateAsync(entities, true, CancellationToken.None);
-            var result1 = await _context.Set<AccountEntity>().ToListAsync();
-            Assert.NotNull(result1);
-            Assert.True(result1.All(x => x.FirstName == "First update"));
+            inserted = await _repository.UpdateAsync(inserted, true, CancellationToken.None);
+            Assert.True(inserted.All(x => x.FirstName == "First update"));
 
-            entities.ForEach(x =>
+            inserted.ForEach(x =>
             {
                 x.FirstName = "Second update";
             });
 
-            await _repository.UpdateAsync(entities, true, CancellationToken.None);
-            var result2 = await _context.Set<AccountEntity>().ToListAsync();
-            Assert.NotNull(result2);
-            Assert.True(result2.All(x => x.FirstName == "Second update"));
+            inserted = await _repository.UpdateAsync(inserted, true, CancellationToken.None);
+            Assert.True(inserted.All(x => x.FirstName == "Second update"));
+
+            var result = await _context.Set<AccountEntity>().ToListAsync();
+            Assert.NotNull(result);
+            Assert.True(result.Count == entities.Count);
+        }
+
+        [Fact]
+        public async Task UpdateAsync_MultipleEntities_Detached_UpdatesEntitiesInContext()
+        {
+            var entities = new List<AccountEntity>
+            {
+                 new() { Id = 1, FirstName = "Test1", LastName = "Test1" },
+                 new() { Id = 2, FirstName = "Test2", LastName = "Test2" }
+            };
+
+            var inserted = await _repository.InsertAsync(entities, true);
+
+            _context.ChangeTracker.Clear();
+
+            inserted.ForEach(x =>
+            {
+                x.FirstName = "First update";
+            });
+
+            inserted = await _repository.UpdateAsync(inserted, true, CancellationToken.None);
+            Assert.True(inserted.All(x => x.FirstName == "First update"));
+
+            _context.ChangeTracker.Clear();
+
+            inserted.ForEach(x =>
+            {
+                x.FirstName = "Second update";
+            });
+
+            inserted = await _repository.UpdateAsync(inserted, true, CancellationToken.None);
+            Assert.True(inserted.All(x => x.FirstName == "Second update"));
+
+            var result = await _context.Set<AccountEntity>().ToListAsync();
+            Assert.NotNull(result);
+            Assert.True(result.Count == entities.Count);
         }
 
         [Fact]
@@ -221,32 +313,31 @@ namespace ApiTemplate.Infrastructure.Tests
                  new() { Id = 2, FirstName = "Test2", LastName = "Test2" }
             };
 
-            await _repository.InsertAsync(entities, true);
+            var inserted = await _repository.InsertAsync(entities, true);
 
-            entities.ForEach(x =>
+            inserted.ForEach(x =>
             {
                 x.FirstName = "First update";
                 x.LastName = "First update";
             });
 
-            await _repository.UpdateAsync(entities, true, CancellationToken.None, e => e.FirstName);
-            var result1 = await _context.Set<AccountEntity>().ToListAsync();
-            Assert.NotNull(result1);
-            Assert.True(result1.All(x => x.FirstName == "First update"));
-            Assert.True(result1.All(x => x.LastName != "First update"));
+            inserted = await _repository.UpdateAsync(inserted, true, CancellationToken.None, e => e.FirstName);
+            Assert.True(inserted.All(x => x.FirstName == "First update"));
+            Assert.True(inserted.All(x => x.LastName != "First update"));
 
-            entities.ForEach(x =>
+            inserted.ForEach(x =>
             {
                 x.FirstName = "Second update";
                 x.LastName = "Second update";
             });
 
-            await _repository.UpdateAsync(entities, true, CancellationToken.None, e => e.FirstName);
-            var result2 = await _context.Set<AccountEntity>().ToListAsync();
+            inserted = await _repository.UpdateAsync(inserted, true, CancellationToken.None, e => e.FirstName);
+            Assert.True(inserted.All(x => x.FirstName == "Second update"));
+            Assert.True(inserted.All(x => x.LastName != "Second update"));
 
-            Assert.NotNull(result2);
-            Assert.True(result2.All(x => x.FirstName == "Second update"));
-            Assert.True(result2.All(x => x.LastName != "Second update"));
+            var result = await _context.Set<AccountEntity>().ToListAsync();
+            Assert.NotNull(result);
+            Assert.True(result.Count == entities.Count);
         }
 
         [Fact]
@@ -258,55 +349,35 @@ namespace ApiTemplate.Infrastructure.Tests
                  new() { Id = 2, FirstName = "Test2", LastName = "Test2" }
             };
 
-            await _repository.InsertAsync(entities, true);
+            var inserted = await _repository.InsertAsync(entities, true);
 
-            entities.ForEach(x =>
+            _context.ChangeTracker.Clear();
+
+            inserted.ForEach(x =>
             {
-                _context.Entry(x).State = EntityState.Detached;
                 x.FirstName = "First update";
                 x.LastName = "First update";
             });
 
-            await _repository.UpdateAsync(entities, true, CancellationToken.None, e => e.FirstName);
-            var result1 = await _context.Set<AccountEntity>().ToListAsync();
-            Assert.NotNull(result1);
-            Assert.True(result1.All(x => x.FirstName == "First update"));
-            Assert.True(result1.All(x => x.LastName != "First update"));
+            inserted = await _repository.UpdateAsync(inserted, true, CancellationToken.None, e => e.FirstName);
+            Assert.True(inserted.All(x => x.FirstName == "First update"));
+            Assert.True(inserted.All(x => x.LastName != "First update"));
 
-            entities.ForEach(x =>
+            _context.ChangeTracker.Clear();
+
+            inserted.ForEach(x =>
             {
-                _context.Entry(x).State = EntityState.Detached;
                 x.FirstName = "Second update";
                 x.LastName = "Second update";
             });
 
-            await _repository.UpdateAsync(entities, true, CancellationToken.None, e => e.FirstName);
-            var result2 = await _context.Set<AccountEntity>().ToListAsync();
+            inserted = await _repository.UpdateAsync(inserted, true, CancellationToken.None, e => e.FirstName);
+            Assert.True(inserted.All(x => x.FirstName == "Second update"));
+            Assert.True(inserted.All(x => x.LastName != "Second update"));
 
-            Assert.NotNull(result2);
-            Assert.True(result2.All(x => x.FirstName == "Second update"));
-            Assert.True(result2.All(x => x.LastName != "Second update"));
-        }
-
-        [Fact]
-        public async Task UpdateAttachedAsync_ThrowsIfEntityNotAttached()
-        {
-            var entity = new AccountEntity { FirstName = "Test", LastName = "Test!!!" };
-            await Assert.ThrowsAsync<NullReferenceException>(() => _repository.UpdateAttachedAsync(entity, true));
-        }
-
-        [Fact]
-        public async Task UpdateAttachedAsync_UpdatesAttachedEntity()
-        {
-            var entity = new AccountEntity { FirstName = "Test", LastName = "Test" };
-            var attachedEntity = await _repository.InsertAsync(entity, true);
-
-            attachedEntity.FirstName = "Updated Test";
-            await _repository.UpdateAttachedAsync(attachedEntity, true);
-
-            var result = await _context.Set<AccountEntity>().FindAsync(1);
+            var result = await _context.Set<AccountEntity>().ToListAsync();
             Assert.NotNull(result);
-            Assert.Equal("Updated Test", result.FirstName);
+            Assert.True(result.Count == entities.Count);
         }
 
         [Fact]

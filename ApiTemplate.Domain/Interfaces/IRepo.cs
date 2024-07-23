@@ -14,19 +14,13 @@ namespace ApiTemplate.Domain.Interfaces
         Task DeleteAsync<TList>(TList items, bool saveChanges = false, bool offBulk = false, CancellationToken cancellationToken = default) where TList : IList<TEntity>;
 
         /// <summary>
-        /// Update attached entity, with only modified props.
-        /// Throws exception if entity is not attached.
-        /// </summary>
-        /// <exception cref="NullReferenceException" ></exception>
-        Task<TEntity> UpdateAttachedAsync(TEntity entity, bool saveChanges = false, CancellationToken cancellationToken = default);
-        /// <summary>
         /// Update entity by related PK, with only modified props.
         /// </summary>
         /// <exception cref="NullReferenceException" ></exception>
-        Task UpdateAsync(TEntity entity, bool saveChanges = false, CancellationToken cancellationToken = default, params Expression<Func<TEntity, object>>[] fields);
+        Task<TEntity> UpdateAsync(TEntity entity, bool saveChanges = false, CancellationToken cancellationToken = default, params Expression<Func<TEntity, object>>[] fields);
         /// <summary>
         /// Update entity by related PK, with only modified props.
         /// </summary>
-        Task UpdateAsync<TList>(TList entities, bool saveChanges = false, CancellationToken cancellationToken = default, params Expression<Func<TEntity, object>>[] fields) where TList : IList<TEntity>;
+        Task<List<TEntity>> UpdateAsync(List<TEntity> entities, bool saveChanges = false, CancellationToken cancellationToken = default, params Expression<Func<TEntity, object>>[] fields);
     }
 }

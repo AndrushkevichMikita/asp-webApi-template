@@ -51,12 +51,12 @@ namespace ApiTemplate.Infrastructure.Repositories
 
         public virtual async Task<TEntity> InsertAsync(TEntity entity, bool saveChanges = false, CancellationToken cancellationToken = default)
         {
-            var rtn = await DbSet.AddAsync(entity, cancellationToken);
+            var toReturn = await DbSet.AddAsync(entity, cancellationToken);
 
             if (saveChanges)
                 await Context.SaveChangesAsync(cancellationToken);
 
-            return rtn.Entity;
+            return toReturn.Entity;
         }
 
         public virtual async Task<TList> InsertAsync<TList>(TList entities, bool saveChanges = false, CancellationToken cancellationToken = default) where TList : IList<TEntity>
@@ -71,20 +71,7 @@ namespace ApiTemplate.Infrastructure.Repositories
 
         public virtual async Task DeleteAsync(TEntity entity, bool saveChanges = false, CancellationToken cancellationToken = default)
         {
-            var existing = DbSet.Local.FirstOrDefault(e => GetPrimaryKeyValues(e).SequenceEqual(GetPrimaryKeyValues(entity)));
-            if (existing is not null)
-            {
-                var entry = Context.Entry(existing);
-                var isTracked = entry != null && entry.State != EntityState.Detached;
-                if (isTracked)
-                {
-                    entry.State = EntityState.Deleted;
-                }
-            }
-            else
-            {
-                DbSet.Remove(entity);
-            }
+            DbSet.Remove(entity);
 
             if (saveChanges)
                 await Context.SaveChangesAsync(cancellationToken);
@@ -96,12 +83,11 @@ namespace ApiTemplate.Infrastructure.Repositories
                 return;
 
             if (items.Count >= bulkOperationStartCount && !offBulk)
+            {
                 await Context.BulkDeleteAsync(items, cancellationToken: cancellationToken);
+            }
             else
             {
-                //foreach (var entity in items)
-                //    DetachIfExist(entity);
-
                 DbSet.RemoveRange(items);
             }
 
@@ -109,20 +95,7 @@ namespace ApiTemplate.Infrastructure.Repositories
                 await Context.SaveChangesAsync(cancellationToken);
         }
 
-        public virtual async Task<TEntity> UpdateAttachedAsync(TEntity entity, bool saveChanges = false, CancellationToken cancellationToken = default)
-        {
-            var keyValues = GetPrimaryKeyValues(entity);
-            var existing = DbSet.Local.FirstOrDefault(e => GetPrimaryKeyValues(e).SequenceEqual(keyValues))
-                                                 ?? throw new NullReferenceException("Entity not attached");
-
-            Context.Entry(existing).CurrentValues.SetValues(entity);
-            if (saveChanges)
-                await Context.SaveChangesAsync(cancellationToken);
-
-            return existing;
-        }
-
-        public virtual async Task UpdateAsync(TEntity entity, bool saveChanges = false, CancellationToken cancellationToken = default, params Expression<Func<TEntity, object>>[] fields)
+        public virtual async Task<TEntity> UpdateAsync(TEntity entity, bool saveChanges = false, CancellationToken cancellationToken = default, params Expression<Func<TEntity, object>>[] fields)
         {
             if (entity == null) throw new ArgumentNullException(nameof(entity));
 
@@ -142,6 +115,9 @@ namespace ApiTemplate.Infrastructure.Repositories
                     {
                         Context.Entry(existingEntity).CurrentValues.SetValues(entity);
                         entry = Context.Entry(existingEntity);
+                        // link to existingEntity that will later be changed in the foreach loop,
+                        // properties that should not change will be returned to their previous state
+                        entity = entry.Entity;
                     }
                     else
                     {
@@ -156,7 +132,11 @@ namespace ApiTemplate.Infrastructure.Repositories
             }
 
             if (saveChanges)
+            {
                 await Context.SaveChangesAsync(cancellationToken);
+            }
+
+            return entity;
         }
 
         private async Task<List<TEntity>> FindEntitiesAsync(IEnumerable<object[]> keyValuesList)
@@ -214,9 +194,11 @@ namespace ApiTemplate.Infrastructure.Repositories
             return localEntities;
         }
 
-        public virtual async Task UpdateAsync<TList>(TList entities, bool saveChanges = false, CancellationToken cancellationToken = default, params Expression<Func<TEntity, object>>[] fields) where TList : IList<TEntity>
+        public virtual async Task<List<TEntity>> UpdateAsync(List<TEntity> entities, bool saveChanges = false, CancellationToken cancellationToken = default, params Expression<Func<TEntity, object>>[] fields)
         {
             if (entities == null) throw new ArgumentNullException(nameof(entities));
+
+            var toReturnEntities = entities;
 
             var isPartialUpdate = fields.Length > 0;
             if (entities.Count >= bulkOperationStartCount)
@@ -237,7 +219,8 @@ namespace ApiTemplate.Infrastructure.Repositories
                     var existingEntities = await FindEntitiesAsync(keyValuesList);
 
                     var keyProperties = Context.Model.FindEntityType(typeof(TEntity)).FindPrimaryKey().Properties;
-                    foreach (var entity in entities)
+
+                    toReturnEntities = entities.Select(entity =>
                     {
                         var keyValues = GetPrimaryKeyValues(entity);
                         var existingEntity = existingEntities.FirstOrDefault(e => keyProperties.Select(p => p.PropertyInfo.GetValue(e)).SequenceEqual(keyValues));
@@ -253,17 +236,21 @@ namespace ApiTemplate.Infrastructure.Repositories
                         }
 
                         var entry = Context.Entry(existingEntity);
-
                         foreach (var property in entry.Properties)
                         {
                             property.IsModified = fields.Any(f => property.Metadata.Name == LambdaExtension.GetMemberName(f));
                         }
-                    }
+                        // link to existingEntity that will later be changed in the foreach loop,
+                        // properties that should not change will be returned to their previous state
+                        return entry.Entity;
+                    }).ToList();
                 }
             }
 
             if (saveChanges)
                 await Context.SaveChangesAsync(cancellationToken);
+
+            return toReturnEntities;
         }
 
         private bool disposed = false;
