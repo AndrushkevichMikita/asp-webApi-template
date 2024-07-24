@@ -50,7 +50,7 @@ namespace ApiTemplate.Infrastructure
               .AddClaimsPrincipalFactory<TFactory>();
 
             services.AddScoped(typeof(IRepo<>), typeof(TRepository<>));
-            services.AddScoped<ISaveChangesInterceptor, UserEntityInterceptor>();
+            services.AddScoped<ISaveChangesInterceptor, AccountEntityInterceptor>();
 #if DEBUG
             services.AddDatabaseDeveloperPageExceptionFilter();
 #endif

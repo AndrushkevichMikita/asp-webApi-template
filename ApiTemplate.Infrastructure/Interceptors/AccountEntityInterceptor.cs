@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace ApiTemplate.Infrastructure.Interceptors
 {
-    public class UserEntityInterceptor : SaveChangesInterceptor
+    public class AccountEntityInterceptor : SaveChangesInterceptor
     {
         public override InterceptionResult<int> SavingChanges(DbContextEventData eventData, InterceptionResult<int> result)
         {
@@ -32,7 +32,7 @@ namespace ApiTemplate.Infrastructure.Interceptors
                     entry.Entity.LastUpdated = now;
                 }
 
-                if (entry.State == EntityState.Added || entry.State == EntityState.Modified || entry.HasChangedOwnedEntities())
+                if (entry.State == EntityState.Modified || entry.HasChangedOwnedEntities())
                 {
                     entry.Entity.LastUpdated = now;
                 }

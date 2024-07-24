@@ -22,16 +22,15 @@ namespace ApiTemplate.Application.Tests
         private readonly Mock<IRepo<AccountTokenEntity>> _userTokenRepoMock;
         private readonly Mock<IEmailTemplateService> _emailTemplateServiceMock;
         private readonly ApplicationSignInManager _signInManager;
-        private readonly Mock<IMapper> _mapperMock;
         private readonly AccountService _accountService;
+        private readonly Mock<IMapper> _mapperMock;
 
         public AccountServiceTests()
         {
+            _mapperMock = new Mock<IMapper>();
             _userTokenRepoMock = new Mock<IRepo<AccountTokenEntity>>();
             _emailTemplateServiceMock = new Mock<IEmailTemplateService>();
-            _mapperMock = new Mock<IMapper>();
 
-            // Setting up UserManager and dependencies
             var userManagerMock = new Mock<UserManager<AccountEntity>>(
                 Mock.Of<IUserStore<AccountEntity>>(),
                 Mock.Of<IOptions<IdentityOptions>>(),
@@ -44,38 +43,29 @@ namespace ApiTemplate.Application.Tests
                 Mock.Of<ILogger<UserManager<AccountEntity>>>()
             );
 
-            var contextAccessorMock = new Mock<IHttpContextAccessor>();
-            var claimsFactoryMock = new Mock<IUserClaimsPrincipalFactory<AccountEntity>>();
-            var configurationMock = new Mock<IConfiguration>();
             var optionsAccessorMock = Options.Create(new IdentityOptions());
-            var loggerMock = new Mock<ILogger<SignInManager<AccountEntity>>>();
-            var schemesMock = new Mock<IAuthenticationSchemeProvider>();
-            var confirmationMock = new Mock<IUserConfirmation<AccountEntity>>();
-
-            var roleManagerMock = new Mock<RoleManager<IdentityRole<int>>>(
-                Mock.Of<IRoleStore<IdentityRole<int>>>(),
-                Array.Empty<IRoleValidator<IdentityRole<int>>>(),
-                Mock.Of<ILookupNormalizer>(),
-                Mock.Of<IdentityErrorDescriber>(),
-                Mock.Of<ILogger<RoleManager<IdentityRole<int>>>>()
-            );
-
-            var applicationUserClaimsPrincipalFactory = new ApplicationUserClaimsPrincipalFactory(
-                userManagerMock.Object,
-                roleManagerMock.Object,
-                optionsAccessorMock
-            );
 
             _signInManager = new ApplicationSignInManager(
                 userManagerMock.Object,
-                contextAccessorMock.Object,
-                claimsFactoryMock.Object,
-                configurationMock.Object,
+                new Mock<IHttpContextAccessor>().Object,
+                new Mock<IUserClaimsPrincipalFactory<AccountEntity>>().Object,
+                new Mock<IConfiguration>().Object,
                 optionsAccessorMock,
-                loggerMock.Object,
-                schemesMock.Object,
-                confirmationMock.Object,
-               applicationUserClaimsPrincipalFactory
+                new Mock<ILogger<SignInManager<AccountEntity>>>().Object,
+                new Mock<IAuthenticationSchemeProvider>().Object,
+                new Mock<IUserConfirmation<AccountEntity>>().Object,
+                new ApplicationUserClaimsPrincipalFactory
+                (
+                    userManagerMock.Object,
+                    new Mock<RoleManager<IdentityRole<int>>>(
+                        Mock.Of<IRoleStore<IdentityRole<int>>>(),
+                        Array.Empty<IRoleValidator<IdentityRole<int>>>(),
+                        Mock.Of<ILookupNormalizer>(),
+                        Mock.Of<IdentityErrorDescriber>(),
+                        Mock.Of<ILogger<RoleManager<IdentityRole<int>>>>()
+                    ).Object,
+                    optionsAccessorMock
+                )
             );
 
             _accountService = new AccountService(

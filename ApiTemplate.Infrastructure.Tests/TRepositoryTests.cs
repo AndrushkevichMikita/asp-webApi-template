@@ -6,8 +6,8 @@ namespace ApiTemplate.Infrastructure.Tests
 {
     public class TRepositoryTests
     {
-        private readonly ApplicationDbContext _context;
         private readonly TRepository<AccountEntity> _repository;
+        private readonly ApplicationDbContext _context;
 
         public TRepositoryTests()
         {
@@ -20,16 +20,14 @@ namespace ApiTemplate.Infrastructure.Tests
             _repository = new TRepository<AccountEntity>(_context);
         }
 
+        private static AccountEntity AccountEntity() => new() { FirstName = "Initial", LastName = "Initial" };
+
+        private static readonly List<AccountEntity> AccountEntities = new() { AccountEntity(), AccountEntity() };
+
         [Fact]
         public async Task GetIQueryable_ReturnsQueryable()
         {
-            var entities = new List<AccountEntity>
-            {
-                new() { Id = 1, FirstName = "Test1", LastName = "Test1" },
-                new() { Id = 2, FirstName = "Test2", LastName = "Test2" }
-            };
-
-            await _repository.InsertAsync(entities, true);
+            await _repository.InsertAsync(AccountEntities, true);
 
             var result = await _repository.GetIQueryable().ToListAsync();
 
@@ -40,13 +38,7 @@ namespace ApiTemplate.Infrastructure.Tests
         [Fact]
         public async Task GetIQueryable_AsNoTracking_ReturnsQueryable()
         {
-            var entities = new List<AccountEntity>
-            {
-                 new() { Id = 1, FirstName = "Test1", LastName = "Test1" },
-                 new() { Id = 2, FirstName = "Test2", LastName = "Test2" }
-            };
-
-            await _repository.InsertAsync(entities, true);
+            await _repository.InsertAsync(AccountEntities, true);
 
             var result = await _repository.GetIQueryable(true).ToListAsync();
 
@@ -57,9 +49,7 @@ namespace ApiTemplate.Infrastructure.Tests
         [Fact]
         public async Task InsertAsync_AddsEntityToContext()
         {
-            var entity = new AccountEntity { FirstName = "Test", LastName = "Test" };
-
-            var inserted = await _repository.InsertAsync(entity, true);
+            var inserted = await _repository.InsertAsync(AccountEntity(), true);
             Assert.NotNull(inserted);
 
             var result = await _context.Set<AccountEntity>().FindAsync(1);
@@ -69,13 +59,7 @@ namespace ApiTemplate.Infrastructure.Tests
         [Fact]
         public async Task InsertAsync_MultipleEntities_AddsEntitiesToContext()
         {
-            var entities = new List<AccountEntity>
-            {
-                 new() { Id = 1, FirstName = "Test1", LastName = "Test1" },
-                 new() { Id = 2, FirstName = "Test2", LastName = "Test2" }
-            };
-
-            var inserted = await _repository.InsertAsync(entities, true);
+            var inserted = await _repository.InsertAsync(AccountEntities, true);
             Assert.Equal(2, inserted.Count);
 
             var result = await _context.Set<AccountEntity>().ToListAsync();
@@ -85,9 +69,7 @@ namespace ApiTemplate.Infrastructure.Tests
         [Fact]
         public async Task DeleteAsync_RemovesEntityFromContext()
         {
-            var entity = new AccountEntity { FirstName = "Test", LastName = "Test" };
-
-            var inserted = await _repository.InsertAsync(entity, true);
+            var inserted = await _repository.InsertAsync(AccountEntity(), true);
             await _repository.DeleteAsync(inserted, true);
 
             var result = await _context.Set<AccountEntity>().FindAsync(1);
@@ -97,12 +79,11 @@ namespace ApiTemplate.Infrastructure.Tests
         [Fact]
         public async Task DeleteAsync_Detached_RemovesEntityFromContext()
         {
-            var entity = new AccountEntity { FirstName = "Test", LastName = "Test" };
+            var inserted = await _repository.InsertAsync(AccountEntity(), true);
 
-            await _repository.InsertAsync(entity, true);
             _context.ChangeTracker.Clear();
 
-            await _repository.DeleteAsync(entity, true);
+            await _repository.DeleteAsync(inserted, true);
 
             var result = await _context.Set<AccountEntity>().FindAsync(1);
             Assert.Null(result);
@@ -111,13 +92,7 @@ namespace ApiTemplate.Infrastructure.Tests
         [Fact]
         public async Task DeleteAsync_MultipleEntities_RemovesEntitiesFromContext()
         {
-            var entities = new List<AccountEntity>
-            {
-                 new() {  FirstName = "Test1", LastName = "Test1" },
-                 new() {  FirstName = "Test2", LastName = "Test2" }
-            };
-
-            var inserted = await _repository.InsertAsync(entities, true);
+            var inserted = await _repository.InsertAsync(AccountEntities, true);
 
             await _repository.DeleteAsync(inserted, true);
 
@@ -128,13 +103,7 @@ namespace ApiTemplate.Infrastructure.Tests
         [Fact]
         public async Task DeleteAsync_MultipleEntities_Detached_RemovesEntitiesFromContext()
         {
-            var entities = new List<AccountEntity>
-            {
-                 new() {  FirstName = "Test1", LastName = "Test1" },
-                 new() {  FirstName = "Test2", LastName = "Test2" }
-            };
-
-            var inserted = await _repository.InsertAsync(entities, true);
+            var inserted = await _repository.InsertAsync(AccountEntities, true);
 
             _context.ChangeTracker.Clear();
 
@@ -147,9 +116,7 @@ namespace ApiTemplate.Infrastructure.Tests
         [Fact]
         public async Task UpdateAsync_UpdatesEntityInContext()
         {
-            var entity = new AccountEntity { FirstName = "Test", LastName = "Test" };
-
-            var inserted = await _repository.InsertAsync(entity, true);
+            var inserted = await _repository.InsertAsync(AccountEntity(), true);
 
             inserted.FirstName = "First update";
             await _repository.UpdateAsync(inserted, true);
@@ -166,9 +133,7 @@ namespace ApiTemplate.Infrastructure.Tests
         [Fact]
         public async Task UpdateAsync_Detached_UpdatesEntityInContext()
         {
-            var entity = new AccountEntity { FirstName = "Test", LastName = "Test" };
-
-            var inserted = await _repository.InsertAsync(entity, true);
+            var inserted = await _repository.InsertAsync(AccountEntity(), true);
 
             _context.ChangeTracker.Clear();
 
@@ -189,9 +154,7 @@ namespace ApiTemplate.Infrastructure.Tests
         [Fact]
         public async Task UpdateAsync_SpecificFields_UpdatesEntityFieldsInContext()
         {
-            var entity = new AccountEntity { FirstName = "Test", LastName = "Test" };
-
-            var inserted = await _repository.InsertAsync(entity, true);
+            var inserted = await _repository.InsertAsync(AccountEntity(), true);
 
             inserted.FirstName = "First update";
             inserted.LastName = "First update";
@@ -212,9 +175,7 @@ namespace ApiTemplate.Infrastructure.Tests
         [Fact]
         public async Task UpdateAsync_SpecificFields_Detached_UpdatesEntityFieldsInContext()
         {
-            var entity = new AccountEntity { FirstName = "Test", LastName = "Test" };
-
-            var inserted = await _repository.InsertAsync(entity, true);
+            var inserted = await _repository.InsertAsync(AccountEntity(), true);
 
             _context.ChangeTracker.Clear();
 
@@ -239,13 +200,7 @@ namespace ApiTemplate.Infrastructure.Tests
         [Fact]
         public async Task UpdateAsync_MultipleEntities_UpdatesEntitiesInContext()
         {
-            var entities = new List<AccountEntity>
-            {
-                 new() { Id = 1, FirstName = "Test1", LastName = "Test1" },
-                 new() { Id = 2, FirstName = "Test2", LastName = "Test2" }
-            };
-
-            var inserted = await _repository.InsertAsync(entities, true);
+            var inserted = await _repository.InsertAsync(AccountEntities, true);
 
             inserted.ForEach(x =>
             {
@@ -265,19 +220,13 @@ namespace ApiTemplate.Infrastructure.Tests
 
             var result = await _context.Set<AccountEntity>().ToListAsync();
             Assert.NotNull(result);
-            Assert.True(result.Count == entities.Count);
+            Assert.True(result.Count == inserted.Count);
         }
 
         [Fact]
         public async Task UpdateAsync_MultipleEntities_Detached_UpdatesEntitiesInContext()
         {
-            var entities = new List<AccountEntity>
-            {
-                 new() { Id = 1, FirstName = "Test1", LastName = "Test1" },
-                 new() { Id = 2, FirstName = "Test2", LastName = "Test2" }
-            };
-
-            var inserted = await _repository.InsertAsync(entities, true);
+            var inserted = await _repository.InsertAsync(AccountEntities, true);
 
             _context.ChangeTracker.Clear();
 
@@ -301,19 +250,13 @@ namespace ApiTemplate.Infrastructure.Tests
 
             var result = await _context.Set<AccountEntity>().ToListAsync();
             Assert.NotNull(result);
-            Assert.True(result.Count == entities.Count);
+            Assert.True(result.Count == inserted.Count);
         }
 
         [Fact]
         public async Task UpdateAsync_MultipleEntities_SpecificFields_UpdatesEntityFieldsInContext()
         {
-            var entities = new List<AccountEntity>
-            {
-                 new() { Id = 1, FirstName = "Test1", LastName = "Test1" },
-                 new() { Id = 2, FirstName = "Test2", LastName = "Test2" }
-            };
-
-            var inserted = await _repository.InsertAsync(entities, true);
+            var inserted = await _repository.InsertAsync(AccountEntities, true);
 
             inserted.ForEach(x =>
             {
@@ -337,19 +280,13 @@ namespace ApiTemplate.Infrastructure.Tests
 
             var result = await _context.Set<AccountEntity>().ToListAsync();
             Assert.NotNull(result);
-            Assert.True(result.Count == entities.Count);
+            Assert.True(result.Count == inserted.Count);
         }
 
         [Fact]
         public async Task UpdateAsync_MultipleEntities_Detached_SpecificFields_UpdatesEntityFieldsInContext()
         {
-            var entities = new List<AccountEntity>
-            {
-                 new() { Id = 1, FirstName = "Test1", LastName = "Test1" },
-                 new() { Id = 2, FirstName = "Test2", LastName = "Test2" }
-            };
-
-            var inserted = await _repository.InsertAsync(entities, true);
+            var inserted = await _repository.InsertAsync(AccountEntities, true);
 
             _context.ChangeTracker.Clear();
 
@@ -377,7 +314,7 @@ namespace ApiTemplate.Infrastructure.Tests
 
             var result = await _context.Set<AccountEntity>().ToListAsync();
             Assert.NotNull(result);
-            Assert.True(result.Count == entities.Count);
+            Assert.True(result.Count == inserted.Count);
         }
 
         [Fact]
