@@ -53,14 +53,14 @@ namespace ApiTemplate.Domain.Services
                  expires: DateTime.Now.AddMinutes(int.Parse(configuration["Jwt:LifetimeMinutes"])),
                  signingCredentials: new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"])), SecurityAlgorithms.HmacSha256));
 
-        public async Task<string> GenerateJwtTokenAsync(AccountEntity user)
+        public virtual async Task<string> GenerateJwtTokenAsync(AccountEntity user)
         {
             var claims = await _applicationUserClaimsPrincipalFactory.GenerateAdjustedClaimsAsync(user);
             var token = CreateJWTToken(_configuration, claims.Claims);
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        public async Task<string> GenerateRefreshTokenAsync(AccountEntity user)
+        public virtual async Task<string> GenerateRefreshTokenAsync(AccountEntity user)
         {
             var refreshToken = Guid.NewGuid().ToString();
             user.RefreshToken = refreshToken;
