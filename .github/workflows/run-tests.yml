@@ -16,4 +16,4 @@ jobs:
       - name: Setup Docker
         run: docker compose -f docker-compose-tests.yml up -d --wait
       - name: Test
-        run: dotnet test Tests
+        run: dotnet test ApiTemplate.sln
