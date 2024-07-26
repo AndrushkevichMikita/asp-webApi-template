@@ -90,7 +90,7 @@ namespace ApiTemplate.Application.Tests
         public async Task LoginAccount_UserNotFound_ThrowsException()
         {
             // Arrange
-            var accountDto = new AccountDto { Email = "test@example.com", Password = "password123", RememberMe = true };
+            var accountDto = new LoginAccountDto { Email = "test@example.com", Password = "password123", RememberMe = true };
 
             _userManagerMock.Setup(x => x.FindByEmailAsync(accountDto.Email))
                             .ReturnsAsync((AccountEntity)null);
@@ -102,7 +102,7 @@ namespace ApiTemplate.Application.Tests
         public async Task LoginAccount_ShouldReturnRefreshTokenDto_WhenCredentialsAreValid()
         {
             // Arrange
-            var accountDto = new AccountDto { Email = "test@example.com", Password = "Password123", RememberMe = true };
+            var accountDto = new LoginAccountDto { Email = "test@example.com", Password = "Password123", RememberMe = true };
             var accountEntity = new AccountEntity { Email = "test@example.com" };
 
             _userManagerMock.Setup(x => x.FindByEmailAsync(accountDto.Email))
@@ -132,7 +132,7 @@ namespace ApiTemplate.Application.Tests
         public async Task CreateAccount_ShouldCreateNewAccount_WhenModelIsValid()
         {
             // Arrange
-            var accountDto = new AccountDto { Email = "test@example.com", Password = "password123", Role = RoleEnum.Admin };
+            var accountDto = new CreateAccountDto { Email = "test@example.com", Password = "password123", Role = RoleEnum.Admin };
             var accountEntity = new AccountEntity { Email = accountDto.Email, Role = accountDto.Role };
             _mapperMock.Setup(x => x.Map<AccountEntity>(accountDto)).Returns(accountEntity);
 

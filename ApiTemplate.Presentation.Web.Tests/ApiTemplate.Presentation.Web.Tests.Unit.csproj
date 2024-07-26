@@ -21,4 +21,8 @@
     </PackageReference>
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\ApiTemplate.Presentation.Web\ApiTemplate.Presentation.Web.csproj" />
+  </ItemGroup>
+
 </Project>

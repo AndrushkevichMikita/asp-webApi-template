@@ -115,14 +115,12 @@ namespace ApiTemplate.Infrastructure.Repositories
                     {
                         Context.Entry(existingEntity).CurrentValues.SetValues(entity);
                         entry = Context.Entry(existingEntity);
-                        // link to existingEntity that will later be changed in the foreach loop,
-                        // properties that should not change will be returned to their previous state
+                        // Ensure we are updating the tracked entity, not the detached one
                         entity = entry.Entity;
                     }
                     else
                     {
-                        DbSet.Attach(entity);
-                        entry = Context.Entry(entity);
+                        throw new InvalidOperationException("Entity does not exist in the database.");
                     }
                 }
                 foreach (var property in entry.Properties)

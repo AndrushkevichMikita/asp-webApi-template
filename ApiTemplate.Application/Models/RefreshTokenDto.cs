@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace ApiTemplate.Application.Models
+﻿namespace ApiTemplate.Application.Models
 {
     public class RefreshTokenDto
     {

@@ -4,9 +4,9 @@ namespace ApiTemplate.Application.Interfaces
 {
     public interface IAccountService
     {
-        Task CreateAccount(AccountDto model);
+        Task CreateAccount(CreateAccountDto model);
 
-        Task<RefreshTokenDto> LoginAccount(AccountDto model);
+        Task<RefreshTokenDto> LoginAccount(LoginAccountDto model);
 
         Task<RefreshTokenDto> CreateNewJwtPair(RefreshTokenDto model, int userId);
 

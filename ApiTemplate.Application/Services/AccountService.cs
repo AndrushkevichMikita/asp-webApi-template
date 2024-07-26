@@ -57,7 +57,7 @@ namespace ApiTemplate.Application.Services
         public Task SignOut()
             => _signInManager.SignOutAsync();
 
-        public async Task<RefreshTokenDto> LoginAccount(AccountDto model)
+        public async Task<RefreshTokenDto> LoginAccount(LoginAccountDto model)
         {
             var appUser = await _signInManager.UserManager.FindByEmailAsync(model.Email) ?? throw new MyApplicationException(ErrorStatus.NotFound, "User not found");
             if (!await _signInManager.UserManager.IsEmailConfirmedAsync(appUser)) throw new MyApplicationException(ErrorStatus.InvalidData, "Email unconfirmed");
@@ -68,14 +68,14 @@ namespace ApiTemplate.Application.Services
             return await CreateNewJwtPair(appUser);
         }
 
-        public async Task CreateAccount(AccountDto model)
+        public async Task CreateAccount(CreateAccountDto model)
         {
             await DeleteSameNotConfirmed(model.Email);
 
             var toInsert = _mapper.Map<AccountEntity>(model);
             var res = await _signInManager.UserManager.CreateAsync(toInsert, model.Password);
             if (!res.Succeeded) throw new MyApplicationException(ErrorStatus.InvalidData, string.Join(" ", res.Errors.Select(c => c.Description)));
-            await _signInManager.UserManager.AddToRoleAsync(toInsert, toInsert.Role.ToString());
+            await _signInManager.UserManager.AddToRoleAsync(toInsert, model.Role.ToString());
         }
 
         public async Task<AccountDto> GetCurrent(int userId)

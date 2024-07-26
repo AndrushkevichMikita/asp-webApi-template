@@ -12,10 +12,16 @@ namespace ApiTemplate.Application.Models
 
         public string LastName { get; set; }
 
+        public bool EmailConfirmed { get; set; }
+
+        public bool PhoneNumberConfirmed { get; set; }
+
+        public bool LockoutEnabled { get; set; }
+
+        public bool AccessFailedCount { get; set; }
+
+        public DateTimeOffset? LockoutEnd { get; set; }
+
         public RoleEnum Role { get; set; }
-
-        public string Password { get; set; }
-
-        public bool RememberMe { get; set; }
     }
 }

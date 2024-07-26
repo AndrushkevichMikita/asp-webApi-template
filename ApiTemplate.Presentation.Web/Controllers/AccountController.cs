@@ -46,7 +46,7 @@ namespace ApiTemplate.Presentation.Web.Controllers
         [HttpPost("signUp")]
         public async Task CreateAccount(CreateAccountModel model)
         {
-            var dto = _mapper.Map<AccountDto>(model);
+            var dto = _mapper.Map<CreateAccountDto>(model);
             await _account.CreateAccount(dto);
         }
 
@@ -54,7 +54,7 @@ namespace ApiTemplate.Presentation.Web.Controllers
         [HttpPost("signIn")]
         public async Task<RefreshTokenModel> LoginAccount(LoginAccountModel model)
         {
-            var dto = _mapper.Map<AccountDto>(model);
+            var dto = _mapper.Map<LoginAccountDto>(model);
             return _mapper.Map<RefreshTokenModel>(await _account.LoginAccount(dto));
         }
 
