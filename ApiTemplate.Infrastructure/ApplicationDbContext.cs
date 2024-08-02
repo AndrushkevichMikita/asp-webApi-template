@@ -28,12 +28,11 @@ namespace ApiTemplate.Infrastructure
         {
             // for detect Multiple Collection Includes, to use AsSplitQuery()
             optionsBuilder.ConfigureWarnings(w => w.Throw(RelationalEventId.MultipleCollectionIncludeWarning));
-            optionsBuilder.EnableSensitiveDataLogging(true);
             // logging the Command Execution
             // Enable here or in Elastic Apm, otherwice messages will duplicates
-             optionsBuilder.LogTo(message => Debug.WriteLine(message), LogLevel.Information)
-                          .EnableSensitiveDataLogging()
-                          .EnableDetailedErrors();
+            //optionsBuilder.LogTo(message => Debug.WriteLine(message), LogLevel.Information)
+            //              .EnableSensitiveDataLogging()
+            //              .EnableDetailedErrors();
         }
 #endif
         protected override void OnModelCreating(ModelBuilder builder)

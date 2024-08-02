@@ -24,24 +24,6 @@ namespace ApiTemplate.Application
 
             services.AddAutoMapper(Assembly.GetExecutingAssembly());
 
-            services.ConfigureApplicationCookie(options =>
-            {
-                options.Cookie.HttpOnly = true;
-                options.SlidingExpiration = true;
-                options.ExpireTimeSpan = TimeSpan.FromDays(1);
-                options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
-                options.Events.OnRedirectToLogin = context =>
-                {
-                    context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
-                    return Task.CompletedTask;
-                };
-                options.Events.OnRedirectToAccessDenied = context =>
-                {
-                    context.Response.StatusCode = (int)HttpStatusCode.Forbidden;
-                    return Task.CompletedTask;
-                };
-            });
-
             services.AddAuthentication(options =>
             {
                 options.DefaultChallengeScheme = "smart";

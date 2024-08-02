@@ -81,7 +81,7 @@ namespace ApiTemplate.Presentation.Web.Controllers
         }
 
         [AuthorizeRoles(RoleEnum.SuperAdmin)]
-        [HttpPost("onlyForSupAdmin")]
+        [HttpGet("onlyForSupAdmin")]
         public IActionResult AllowOnlyForSupAdmin()
             => Ok();
 
