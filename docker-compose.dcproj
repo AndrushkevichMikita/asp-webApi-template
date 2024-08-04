@@ -10,7 +10,6 @@
     <DockerServiceName>web</DockerServiceName>
   </PropertyGroup>
   <ItemGroup>
-    <None Include="docker-compose-tests.yml" />
     <None Include="docker-compose.yml" />
   </ItemGroup>
 </Project>

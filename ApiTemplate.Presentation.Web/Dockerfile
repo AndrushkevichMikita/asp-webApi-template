@@ -7,19 +7,19 @@ EXPOSE 443
 
 FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 WORKDIR /src
-COPY ["Web/Web.csproj", "Web/"]
+COPY ["ApiTemplate.Presentation.Web/ApiTemplate.Presentation.Web.csproj", "ApiTemplate.Presentation.Web/"]
 COPY ["ApiTemplate.Application/ApiTemplate.Application.csproj", "ApiTemplate.Application/"]
-COPY ["ApiTemplate.SharedKernel.Core/ApiTemplate.SharedKernel.Core.csproj", "ApiTemplate.SharedKernel.Core/"]
+COPY ["ApiTemplate.SharedKernel/ApiTemplate.SharedKernel.csproj", "ApiTemplate.SharedKernel/"]
 COPY ["ApiTemplate.Infrastructure/ApiTemplate.Infrastructure.csproj", "ApiTemplate.Infrastructure/"]
-RUN dotnet restore "Web/Web.csproj"
+RUN dotnet restore "ApiTemplate.Presentation.Web/ApiTemplate.Presentation.Web.csproj"
 COPY . .
-WORKDIR "/src/Web"
-RUN dotnet build "Web.csproj" -c Release -o /app/build
+WORKDIR "/src/ApiTemplate.Presentation.Web"
+RUN dotnet build "ApiTemplate.Presentation.Web.csproj" -c Release -o /app/build
 
 FROM build AS publish
-RUN dotnet publish "Web.csproj" -c Release -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "ApiTemplate.Presentation.Web.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "Web.dll"]
+ENTRYPOINT ["dotnet", "ApiTemplate.Presentation.Web.dll"]

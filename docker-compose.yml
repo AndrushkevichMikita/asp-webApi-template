@@ -6,15 +6,13 @@ services:
     image: ${DOCKER_REGISTRY-}web
     build:
       context: .
-      dockerfile: Web/Dockerfile
+      dockerfile: ApiTemplate.Presentation.Web/Dockerfile
     ports:
         - "8080:80"
     networks:
         - elastic
     environment:
-        UseDb: "4" # docker env
         ASPNETCORE_ENVIRONMENT: "Production"
-        DOTNET_DockerDb: "Server=ms-sql-server,1433;Database=webapi;User=SA;Password=Passw0rd123;MultipleActiveResultSets=True;TrustServerCertificate=True;"
 
   ms-sql-server:
     image: mcr.microsoft.com/mssql/server:2017-latest-ubuntu
