@@ -15,6 +15,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Show current directory
+        run: pwd # Print the current working directory to ensure we're in the right place
+
+      - name: List files after checkout
+        run: ls -R # List files in the directory after checking out the code
+
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
@@ -41,13 +47,16 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1 # Replace with your region
 
-      - name: List files
-        run: ls -R
+      - name: Show current directory in deploy step
+        run: pwd
+
+      - name: List files before deployment
+        run: ls -R # List files before deploying to ensure task-def.json exists
 
       - name: Deploy to Amazon ECS
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
-          task-definition: AWS/task-def.json
+          task-definition: AWS/task-def.json # Adjust to correct relative path
           service: ApiTemplateService
           cluster: ApiTemplateCluster
           wait-for-service-stability: true
