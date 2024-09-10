@@ -56,7 +56,7 @@ jobs:
       - name: Deploy to Amazon ECS
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
-          task-definition: AWS/task-def.json # Adjust to correct relative path
+          task-definition: task-def.json # Adjust to correct relative path
           service: ApiTemplateService
           cluster: ApiTemplateCluster
           wait-for-service-stability: true
