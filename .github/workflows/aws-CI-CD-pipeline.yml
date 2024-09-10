@@ -44,7 +44,7 @@ jobs:
       - name: Deploy to Amazon ECS
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
-          task-definition: task-def.json
+          task-definition: AWS/task-def.json
           service: ApiTemplateService
           cluster: ApiTemplateCluster
           wait-for-service-stability: true
