@@ -21,21 +21,26 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Infrastructure", "Infrastru
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Presentation", "Presentation", "{D272FC5D-1E38-4D9A-8A1E-D2FE5F05FB07}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApiTemplate.Application.Tests", "ApiTemplate.Application.Tests\ApiTemplate.Application.Tests.csproj", "{1FE27375-823A-4D2F-AC30-913AAAA17E3B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ApiTemplate.Application.Tests", "ApiTemplate.Application.Tests\ApiTemplate.Application.Tests.csproj", "{1FE27375-823A-4D2F-AC30-913AAAA17E3B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApiTemplate.Infrastructure.Tests", "ApiTemplate.Infrastructure.Tests\ApiTemplate.Infrastructure.Tests.csproj", "{7771B05A-64B8-49C0-AD26-E5BB8740C025}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ApiTemplate.Infrastructure.Tests", "ApiTemplate.Infrastructure.Tests\ApiTemplate.Infrastructure.Tests.csproj", "{7771B05A-64B8-49C0-AD26-E5BB8740C025}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApiTemplate.Presentation.Web.Tests.Unit", "ApiTemplate.Presentation.Web.Tests\ApiTemplate.Presentation.Web.Tests.Unit.csproj", "{8E4E5001-9D9B-468B-BB28-AD6F28A40BF4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ApiTemplate.Presentation.Web.Tests.Unit", "ApiTemplate.Presentation.Web.Tests\ApiTemplate.Presentation.Web.Tests.Unit.csproj", "{8E4E5001-9D9B-468B-BB28-AD6F28A40BF4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApiTemplate.SharedKernel.Tests", "ApiTemplate.SharedKernel.Tests\ApiTemplate.SharedKernel.Tests.csproj", "{FA58E9CE-E4C7-4E9A-BC6B-CEBFE1EA0A7B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ApiTemplate.SharedKernel.Tests", "ApiTemplate.SharedKernel.Tests\ApiTemplate.SharedKernel.Tests.csproj", "{FA58E9CE-E4C7-4E9A-BC6B-CEBFE1EA0A7B}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Domain", "Domain", "{689B029F-D9A8-475D-ADFE-C8D2119B15C7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApiTemplate.Domain", "ApiTemplate.Domain\ApiTemplate.Domain.csproj", "{6109A0A0-7292-49AE-AF19-25691E91BAFF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ApiTemplate.Domain", "ApiTemplate.Domain\ApiTemplate.Domain.csproj", "{6109A0A0-7292-49AE-AF19-25691E91BAFF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApiTemplate.Domain.Tests", "ApiTemplate.Domain.Tests\ApiTemplate.Domain.Tests.csproj", "{E8E6985E-9F11-4B5D-9B63-024BC67F91C5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ApiTemplate.Domain.Tests", "ApiTemplate.Domain.Tests\ApiTemplate.Domain.Tests.csproj", "{E8E6985E-9F11-4B5D-9B63-024BC67F91C5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApiTemplate.Presentation.Web.Tests.Integration", "ApiTemplate.Presentation.Web.Tests.Integration\ApiTemplate.Presentation.Web.Tests.Integration.csproj", "{54108903-F52D-4F76-BE34-540DF9DB8617}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ApiTemplate.Presentation.Web.Tests.Integration", "ApiTemplate.Presentation.Web.Tests.Integration\ApiTemplate.Presentation.Web.Tests.Integration.csproj", "{54108903-F52D-4F76-BE34-540DF9DB8617}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AWS", "AWS", "{E3562933-66B1-44AB-A4EC-A041BF68894A}"
+	ProjectSection(SolutionItems) = preProject
+		AWS\task-def.json = AWS\task-def.json
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
