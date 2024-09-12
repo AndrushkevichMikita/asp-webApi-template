@@ -52,11 +52,13 @@ jobs:
         run: |
           TASK_DEFINITION=$(cat <<EOF
           {
-            "family": "my-app-task",
+            "family": "ApiTemplateTask",
             "networkMode": "awsvpc",
             "containerDefinitions": [
               {
                 "name": "web",
+                "memory": 2048,
+                "cpu": 1024,
                 "image": "1238456anrd/web:${{ github.sha }}",
                 "essential": true,
                 "portMappings": [
@@ -64,24 +66,11 @@ jobs:
                     "containerPort": 80,
                     "protocol": "tcp"
                   }
-                ]
-              },
-              {
-                "name": "elasticsearch",
-                "image": "docker.elastic.co/elasticsearch/elasticsearch:7.9.3",
-                "essential": true,
-                "memory": 4096,
-                "cpu": 1024,
-                "portMappings": [
-                  {
-                    "containerPort": 9200,
-                    "protocol": "tcp"
-                  }
                 ],
                 "environment": [
                   {
-                    "name": "discovery.type",
-                    "value": "single-node"
+                    "name": "ASPNETCORE_ENVIRONMENT",
+                    "value": "Production"
                   }
                 ]
               },
@@ -106,58 +95,22 @@ jobs:
                     "name": "SA_PASSWORD",
                     "value": "Passw0rd123"
                   }
-                ]
-              },
-              {
-                "name": "kibana",
-                "image": "docker.elastic.co/kibana/kibana:7.9.3",
-                "essential": true,
-                "memory": 2048,
-                "cpu": 1024,
-                "portMappings": [
-                  {
-                    "containerPort": 5601,
-                    "protocol": "tcp"
-                  }
                 ],
-                "environment": [
-                  {
-                    "name": "ELASTICSEARCH_HOSTS",
-                    "value": "http://elasticsearch:9200"
+                 "healthCheck": {
+                    "command": [
+                      "CMD-SHELL",
+                      "sqlcmd -S localhost -U SA -P 'Passw0rd123' -Q 'SELECT 1'"
+                    ],
+                    "interval": 30,
+                    "timeout": 5,
+                    "retries": 3,
+                    "startPeriod": 60
                   }
-                ]
-              },
-              {
-                "name": "apm-server",
-                "image": "docker.elastic.co/apm/apm-server:7.9.3",
-                "essential": false,
-                "memory": 512,
-                "cpu": 256,
-                "portMappings": [
-                  {
-                    "containerPort": 8200,
-                    "protocol": "tcp"
-                  }
-                ],
-                "environment": [
-                  {
-                    "name": "output.elasticsearch.hosts",
-                    "value": "[\"http://elasticsearch:9200\"]"
-                  },
-                  {
-                    "name": "apm-server.kibana.enabled",
-                    "value": "true"
-                  },
-                  {
-                    "name": "apm-server.kibana.host",
-                    "value": "http://kibana:5601"
-                  }
-                ]
               }
             ],
             "requiresCompatibilities": ["FARGATE"],
-            "cpu": "4096",
-            "memory": "8192",
+            "cpu": "2096",
+            "memory": "4192",
             "executionRoleArn": "arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/ecsTaskExecutionRole"
           }
           EOF
@@ -170,5 +123,5 @@ jobs:
         run: |
           CLUSTER_NAME=ApiTemplateCluster
           SERVICE_NAME=ApiTemplateService
-          TASK_DEFINITION_ARN=$(aws ecs describe-task-definition --task-definition my-app-task | jq -r '.taskDefinition.taskDefinitionArn')
+          TASK_DEFINITION_ARN=$(aws ecs describe-task-definition --task-definition ApiTemplateTask | jq -r '.taskDefinition.taskDefinitionArn')
           aws ecs update-service --cluster $CLUSTER_NAME --service $SERVICE_NAME --task-definition $TASK_DEFINITION_ARN --force-new-deployment
