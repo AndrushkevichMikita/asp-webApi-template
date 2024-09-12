@@ -47,16 +47,40 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1 # Replace with your region
 
-      - name: Show current directory in deploy step
-        run: pwd
+      - name: Register new ECS task definition
+        id: task-def
+        run: |
+          TASK_DEFINITION=$(cat <<EOF
+          {
+            "family": "my-app-task",
+            "networkMode": "awsvpc",
+            "containerDefinitions": [
+              {
+                "name": "web",
+                "image": "1238456anrd/web:${{ github.sha }}",
+                "essential": true,
+                "portMappings": [
+                  {
+                    "containerPort": 80,
+                    "protocol": "tcp"
+                  }
+                ]
+              }
+            ],
+            "requiresCompatibilities": ["FARGATE"],
+            "cpu": "1024",
+            "memory": "2048",
+            "executionRoleArn": "arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/ecsTaskExecutionRole"
+          }
+          EOF
+          )
 
-      - name: List files before deployment
-        run: ls -R # List files before deploying to ensure task-def.json exists
+          echo "$TASK_DEFINITION" > task-def.json
+          aws ecs register-task-definition --cli-input-json file://task-def.json
 
-      - name: Deploy to Amazon ECS
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
-        with:
-          task-definition: task-definition.json
-          service: ApiTemplateService
-          cluster: ApiTemplateCluster
-          wait-for-service-stability: true
+      - name: Update ECS service
+        run: |
+          CLUSTER_NAME=ApiTemplateCluster
+          SERVICE_NAME=ApiTemplateService
+          TASK_DEFINITION_ARN=$(aws ecs describe-task-definition --task-definition my-app-task | jq -r '.taskDefinition.taskDefinitionArn')
+          aws ecs update-service --cluster $CLUSTER_NAME --service $SERVICE_NAME --task-definition $TASK_DEFINITION_ARN --force-new-deployment
