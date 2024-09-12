@@ -70,7 +70,7 @@ jobs:
                 "name": "elasticsearch",
                 "image": "docker.elastic.co/elasticsearch/elasticsearch:7.9.3",
                 "essential": true,
-                "memory": 1024,
+                "memory": 2048,
                 "cpu": 512,
                 "portMappings": [
                   {
