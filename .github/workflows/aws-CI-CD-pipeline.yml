@@ -54,9 +54,9 @@ jobs:
         run: ls -R # List files before deploying to ensure task-def.json exists
 
       - name: Deploy to Amazon ECS
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
         with:
-          task-definition: ./task-def.json # Adjust to correct relative path
+          task-definition: task-definition.json
           service: ApiTemplateService
           cluster: ApiTemplateCluster
           wait-for-service-stability: true
