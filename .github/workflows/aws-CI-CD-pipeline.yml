@@ -104,7 +104,7 @@ jobs:
                   },
                   {
                     "name": "SA_PASSWORD",
-                    "value": "Passw0rd123"  # Replace with a more secure value
+                    "value": "Passw0rd123"
                   }
                 ]
               },
@@ -156,8 +156,8 @@ jobs:
               }
             ],
             "requiresCompatibilities": ["FARGATE"],
-            "cpu": "3072",  # Adjust CPU to the sum of container CPU allocations
-            "memory": "6144",  # Adjust memory to the sum of container memory allocations
+            "cpu": "4096",
+            "memory": "8192",
             "executionRoleArn": "arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/ecsTaskExecutionRole"
           }
           EOF
