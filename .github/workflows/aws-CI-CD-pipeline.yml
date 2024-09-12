@@ -65,11 +65,99 @@ jobs:
                     "protocol": "tcp"
                   }
                 ]
+              },
+              {
+                "name": "elasticsearch",
+                "image": "docker.elastic.co/elasticsearch/elasticsearch:7.9.3",
+                "essential": true,
+                "memory": 1024,
+                "cpu": 512,
+                "portMappings": [
+                  {
+                    "containerPort": 9200,
+                    "protocol": "tcp"
+                  }
+                ],
+                "environment": [
+                  {
+                    "name": "discovery.type",
+                    "value": "single-node"
+                  }
+                ]
+              },
+              {
+                "name": "ms-sql-server",
+                "image": "mcr.microsoft.com/mssql/server:2017-latest-ubuntu",
+                "essential": true,
+                "memory": 2048,
+                "cpu": 1024,
+                "portMappings": [
+                  {
+                    "containerPort": 1433,
+                    "protocol": "tcp"
+                  }
+                ],
+                "environment": [
+                  {
+                    "name": "ACCEPT_EULA",
+                    "value": "Y"
+                  },
+                  {
+                    "name": "SA_PASSWORD",
+                    "value": "Passw0rd123"  # Replace with a more secure value
+                  }
+                ]
+              },
+              {
+                "name": "kibana",
+                "image": "docker.elastic.co/kibana/kibana:7.9.3",
+                "essential": true,
+                "memory": 512,
+                "cpu": 256,
+                "portMappings": [
+                  {
+                    "containerPort": 5601,
+                    "protocol": "tcp"
+                  }
+                ],
+                "environment": [
+                  {
+                    "name": "ELASTICSEARCH_HOSTS",
+                    "value": "http://elasticsearch:9200"
+                  }
+                ]
+              },
+              {
+                "name": "apm-server",
+                "image": "docker.elastic.co/apm/apm-server:7.9.3",
+                "essential": false,
+                "memory": 512,
+                "cpu": 256,
+                "portMappings": [
+                  {
+                    "containerPort": 8200,
+                    "protocol": "tcp"
+                  }
+                ],
+                "environment": [
+                  {
+                    "name": "output.elasticsearch.hosts",
+                    "value": "[\"http://elasticsearch:9200\"]"
+                  },
+                  {
+                    "name": "apm-server.kibana.enabled",
+                    "value": "true"
+                  },
+                  {
+                    "name": "apm-server.kibana.host",
+                    "value": "http://kibana:5601"
+                  }
+                ]
               }
             ],
             "requiresCompatibilities": ["FARGATE"],
-            "cpu": "1024",
-            "memory": "2048",
+            "cpu": "3072",  # Adjust CPU to the sum of container CPU allocations
+            "memory": "6144",  # Adjust memory to the sum of container memory allocations
             "executionRoleArn": "arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/ecsTaskExecutionRole"
           }
           EOF
