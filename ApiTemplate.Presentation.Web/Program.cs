@@ -17,8 +17,10 @@ using Microsoft.AspNetCore.Identity;
 using Serilog;
 using Serilog.Exceptions;
 using Serilog.Sinks.Elasticsearch;
+using System.Configuration;
 using System.Reflection;
 using System.Text;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 try
 {
@@ -144,12 +146,13 @@ try
 catch (Exception ex)
 {
     var builder = WebApplication.CreateBuilder(args);
+    builder.Configuration.ApplyConfiguration();
     var app = builder.Build();
     var logger = app.Services.GetRequiredService<ILogger<WebApplication>>();
     logger.LogCritical($"Failed to start {Assembly.GetExecutingAssembly().GetName().Name}", ex);
     app.Run(async (context) =>
     {
-        await context.Response.WriteAsync(ex.Message + Environment.NewLine + ex.StackTrace);
+        await context.Response.WriteAsync(builder.Configuration.GetConnectionString("MSSQL") + ex.Message + Environment.NewLine + ex.StackTrace);
     });
     app.Run();
 }
