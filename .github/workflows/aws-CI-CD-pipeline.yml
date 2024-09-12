@@ -109,8 +109,8 @@ jobs:
               }
             ],
             "requiresCompatibilities": ["FARGATE"],
-            "cpu": "2096",
-            "memory": "4192",
+            "cpu": "2048",
+            "memory": "5120",
             "executionRoleArn": "arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/ecsTaskExecutionRole"
           }
           EOF
