@@ -56,25 +56,6 @@ jobs:
             "networkMode": "awsvpc",
             "containerDefinitions": [
               {
-                "name": "web",
-                "memory": 2048,
-                "cpu": 1024,
-                "image": "1238456anrd/web:${{ github.sha }}",
-                "essential": true,
-                "portMappings": [
-                  {
-                    "containerPort": 80,
-                    "protocol": "tcp"
-                  }
-                ],
-                "environment": [
-                  {
-                    "name": "ASPNETCORE_ENVIRONMENT",
-                    "value": "Production"
-                  }
-                ]
-              },
-              {
                 "name": "ms-sql-server",
                 "image": "mcr.microsoft.com/mssql/server:2017-latest-ubuntu",
                 "essential": true,
@@ -96,23 +77,50 @@ jobs:
                     "value": "Passw0rd123"
                   }
                 ],
-                 "healthCheck": {
-                    "command": [
-                      "CMD-SHELL",
-                      "sqlcmd -S localhost -U SA -P 'Passw0rd123' -Q 'SELECT 1'"
-                    ],
-                    "interval": 30,
-                    "timeout": 5,
-                    "retries": 3,
-                    "startPeriod": 60
+                "healthCheck": {
+                  "command": [
+                    "CMD-SHELL",
+                    "sqlcmd -S localhost -U SA -P 'Passw0rd123' -Q 'SELECT 1'"
+                  ],
+                  "interval": 30,
+                  "timeout": 5,
+                  "retries": 3,
+                  "startPeriod": 60
+                }
+              },
+              {
+                "name": "web",
+                "image": "1238456anrd/web:${{ github.sha }}",
+                "essential": true,
+                "portMappings": [
+                  {
+                    "containerPort": 80,
+                    "protocol": "tcp"
                   }
+                ],
+                "environment": [
+                  {
+                    "name": "ASPNETCORE_ENVIRONMENT",
+                    "value": "Production"
+                  }
+                ],
+                "command": [
+                  "sh", "-c", "sleep 30 && dotnet MyApp.dll"  # Adding a delay before starting the application
+                ],
+                "dependsOn": [
+                  {
+                    "containerName": "ms-sql-server",
+                    "condition": "HEALTHY"
+                  }
+                ]
               }
             ],
             "requiresCompatibilities": ["FARGATE"],
             "cpu": "2048",
-            "memory": "5120",
+            "memory": "8192",
             "executionRoleArn": "arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/ecsTaskExecutionRole"
           }
+
           EOF
           )
 
