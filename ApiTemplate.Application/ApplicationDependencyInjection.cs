@@ -2,7 +2,6 @@
 using ApiTemplate.Application.Services;
 using ApiTemplate.Domain.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System.Net;
@@ -12,6 +11,7 @@ namespace ApiTemplate.Application
 {
     public static class ApplicationDependencyInjection
     {
+        public const string ApiTemplateSchema = nameof(ApiTemplateSchema);
         public const string JWTWithNoExpirationSchema = nameof(JWTWithNoExpirationSchema);
 
         public static IServiceCollection AddApplicationServices(this IServiceCollection services, IConfiguration configuration, string schema)
@@ -26,8 +26,8 @@ namespace ApiTemplate.Application
 
             services.AddAuthentication(options =>
             {
-                options.DefaultChallengeScheme = "smart";
-                options.DefaultAuthenticateScheme = "smart";
+                options.DefaultChallengeScheme = ApiTemplateSchema;
+                options.DefaultAuthenticateScheme = ApiTemplateSchema;
             })
             .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
             {
@@ -69,7 +69,7 @@ namespace ApiTemplate.Application
                 tokenValidationParameters.ValidateLifetime = false; // WARN: Since token can be already expired
                 options.TokenValidationParameters = tokenValidationParameters;
             })
-            .AddPolicyScheme("smart", "Smart Authentication", options =>
+            .AddPolicyScheme(ApiTemplateSchema, ApiTemplateSchema, options =>
             {
                 options.ForwardDefaultSelector = context =>
                 {

@@ -2,6 +2,8 @@
 using ApiTemplate.SharedKernel.PrimitivesExtensions;
 using EFCore.BulkExtensions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
+using System.Collections.Concurrent;
 using System.Linq.Expressions;
 
 namespace ApiTemplate.Infrastructure.Repositories
@@ -30,10 +32,31 @@ namespace ApiTemplate.Infrastructure.Repositories
             }
         }
 
-        private object[] GetPrimaryKeyValues(TEntity entity)
+        private static readonly ConcurrentDictionary<Type, IProperty[]> _keyPropertiesCache = new();
+        private static readonly ConcurrentDictionary<Type, Func<TEntity, object[]>> _primaryKeyAccessorCache = new();
+
+        private IProperty[] GetPrimaryKeyProperties()
         {
-            var keyProperties = Context.Model.FindEntityType(typeof(TEntity)).FindPrimaryKey().Properties;
-            return keyProperties.Select(p => p.PropertyInfo.GetValue(entity)).ToArray();
+            return _keyPropertiesCache.GetOrAdd(typeof(TEntity), entityType =>
+            {
+                var keyProperties = Context.Model.FindEntityType(entityType).FindPrimaryKey().Properties;
+                return keyProperties.ToArray();
+            });
+        }
+
+        private Func<TEntity, object[]> GetPrimaryKeyValuesFunc()
+        {
+            return _primaryKeyAccessorCache.GetOrAdd(typeof(TEntity), entityType =>
+            {
+                // Get the key properties (this will use the cache)
+                var keyProperties = GetPrimaryKeyProperties();
+
+                // Create the accessors for getting primary key values
+                var accessors = keyProperties.Select(p => (Func<TEntity, object>)((entity) => p.PropertyInfo.GetValue(entity))).ToArray();
+
+                // Return a delegate that retrieves primary key values using the accessors
+                return (entity) => accessors.Select(a => a(entity)).ToArray();
+            });
         }
 
         public virtual IQueryable<TEntity> GetIQueryable(bool asNoTracking)
@@ -109,8 +132,10 @@ namespace ApiTemplate.Infrastructure.Repositories
                 // Attach the entity if not already tracked
                 if (entry.State == EntityState.Detached)
                 {
-                    var keyValues = GetPrimaryKeyValues(entity);
+                    var getPrimaryKeyValuesFunc = GetPrimaryKeyValuesFunc();
+                    var keyValues = getPrimaryKeyValuesFunc(entity);
                     var existingEntity = await DbSet.FindAsync(keyValues);
+
                     if (existingEntity != null)
                     {
                         Context.Entry(existingEntity).CurrentValues.SetValues(entity);
@@ -139,36 +164,35 @@ namespace ApiTemplate.Infrastructure.Repositories
 
         private async Task<List<TEntity>> FindEntitiesAsync(IEnumerable<object[]> keyValuesList)
         {
-            var keyProperties = Context.Model.FindEntityType(typeof(TEntity)).FindPrimaryKey().Properties;
-            var keyPropertiesNames = keyProperties.Select(p => p.Name).ToList();
-
-            // Convert key values to dictionary for easier comparison
+            // Convert key values to a dictionary for easier comparison
             var keyValuesDict = keyValuesList.ToDictionary(
                 keyValues => string.Join(",", keyValues),
                 keyValues => keyValues
             );
 
-            // Get the local entities
+            var getPrimaryKeyValuesFunc = GetPrimaryKeyValuesFunc();
+            // Get the local entities using cached accessors
             var localEntities = DbSet.Local.Where(entity =>
             {
-                var entityKeyValues = keyPropertiesNames.Select(name => Context.Entry(entity).Property(name).CurrentValue).ToArray();
+                var entityKeyValues = getPrimaryKeyValuesFunc(entity); // Use cached accessors
                 var key = string.Join(",", entityKeyValues);
                 return keyValuesDict.ContainsKey(key);
             }).ToList();
 
             // Remove found keys from the dictionary
-            foreach (var localEntity in localEntities)
+            localEntities.ForEach(localEntity =>
             {
-                var entityKeyValues = keyPropertiesNames.Select(name => Context.Entry(localEntity).Property(name).CurrentValue).ToArray();
+                var entityKeyValues = getPrimaryKeyValuesFunc(localEntity); // Use cached accessors
                 var key = string.Join(",", entityKeyValues);
                 keyValuesDict.Remove(key);
-            }
+            });
 
             // Remaining keys need to be queried from the database
             if (keyValuesDict.Count > 0)
             {
                 var parameter = Expression.Parameter(typeof(TEntity));
                 Expression predicate = Expression.Constant(false);
+                var keyProperties = GetPrimaryKeyProperties().ToList(); // Reuse the cached key properties
 
                 foreach (var keyValues in keyValuesDict.Values)
                 {
@@ -213,26 +237,34 @@ namespace ApiTemplate.Infrastructure.Repositories
                 }
                 else
                 {
-                    var keyValuesList = entities.Select(GetPrimaryKeyValues).ToList();
+                    var keyProperties = GetPrimaryKeyProperties();
+                    var getPrimaryKeyValuesFunc = GetPrimaryKeyValuesFunc();
+                    var keyValuesList = entities.Select(getPrimaryKeyValuesFunc).ToList();
                     var existingEntities = await FindEntitiesAsync(keyValuesList);
 
-                    var keyProperties = Context.Model.FindEntityType(typeof(TEntity)).FindPrimaryKey().Properties;
+                    var keyToEntityMap = existingEntities.ToDictionary(
+                                         existingEntity => string.Join(",", keyProperties.Select(p => p.PropertyInfo.GetValue(existingEntity))),
+                                         existingEntity => existingEntity);
 
-                    toReturnEntities = entities.Select(entity =>
+                    toReturnEntities = entities.Select((entity, index) =>
                     {
-                        var keyValues = GetPrimaryKeyValues(entity);
-                        var existingEntity = existingEntities.FirstOrDefault(e => keyProperties.Select(p => p.PropertyInfo.GetValue(e)).SequenceEqual(keyValues));
+                        var keyValues = keyValuesList[index];
+                        var key = string.Join(",", keyValues);
 
-                        if (existingEntity != null)
+                        // Lookup the existing entity using the key
+                        if (keyToEntityMap.TryGetValue(key, out var existingEntity))
                         {
+                            // Update the existing entity with the current entity's values
                             Context.Entry(existingEntity).CurrentValues.SetValues(entity);
                         }
                         else
                         {
+                            // Attach the new entity
                             DbSet.Attach(entity);
                             existingEntity = entity;
                         }
 
+                        // Mark properties as modified for partial updates
                         var entry = Context.Entry(existingEntity);
                         foreach (var property in entry.Properties)
                         {
