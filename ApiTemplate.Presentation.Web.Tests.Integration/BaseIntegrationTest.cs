@@ -18,12 +18,17 @@ namespace ApiTemplate.Presentation.Web.Tests.Integration
         private readonly static INetwork _weatherForecastNetwork = new NetworkBuilder().Build();
 
         private readonly MsSqlContainer _mssqlContainer = new MsSqlBuilder()
+                                                             .WithCleanUp(true)
+                                                             .WithPortBinding(1433)
+                                                             .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(1433))
                                                              .WithNetwork(_weatherForecastNetwork)
                                                              .WithNetworkAliases(networkAliase)
                                                              .Build();
 
         private readonly ElasticsearchContainer _elasticsearchcontainer = new ElasticsearchBuilder()
+                                                                             .WithCleanUp(true)
                                                                              .WithPortBinding(9200)
+                                                                             .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(9200))
                                                                              .WithNetwork(_weatherForecastNetwork)
                                                                              .WithNetworkAliases(networkAliase)
                                                                              .Build();
@@ -38,7 +43,8 @@ namespace ApiTemplate.Presentation.Web.Tests.Integration
                 }
                 services.AddDbContext<ApplicationDbContext>(options =>
                 {
-                    options.UseSqlServer(_mssqlContainer.GetConnectionString());
+                    var c = _mssqlContainer.GetConnectionString();
+                    options.UseSqlServer(c);
                 });
             });
 
@@ -48,15 +54,15 @@ namespace ApiTemplate.Presentation.Web.Tests.Integration
 
         public async Task InitializeAsync()
         {
-            await _weatherForecastNetwork.CreateAsync().ConfigureAwait(false);
-            await _mssqlContainer.StartAsync().ConfigureAwait(false);
-            await _elasticsearchcontainer.StartAsync().ConfigureAwait(false);
+            await _weatherForecastNetwork.CreateAsync();
+            await _mssqlContainer.StartAsync();
+            await _elasticsearchcontainer.StartAsync();
         }
 
         public new async Task DisposeAsync()
         {
-            await _mssqlContainer.DisposeAsync();
-            await _elasticsearchcontainer.DisposeAsync();
+            await _mssqlContainer.StopAsync();
+            await _elasticsearchcontainer.StopAsync();
             await _weatherForecastNetwork.DisposeAsync();
         }
 
