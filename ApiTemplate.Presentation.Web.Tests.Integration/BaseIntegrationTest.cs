@@ -1,36 +1,21 @@
 ﻿using ApiTemplate.Infrastructure;
 using DotNet.Testcontainers.Builders;
-using DotNet.Testcontainers.Networks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Testcontainers.Elasticsearch;
 using Testcontainers.MsSql;
 
 namespace ApiTemplate.Presentation.Web.Tests.Integration
 {
     public class TestsWebApplicationFactory : WebApplicationFactory<Program>, IAsyncLifetime
     {
-        const string networkAliase = nameof(networkAliase);
-        private readonly static INetwork _weatherForecastNetwork = new NetworkBuilder().Build();
-
         private readonly MsSqlContainer _mssqlContainer = new MsSqlBuilder()
                                                              .WithCleanUp(true)
                                                              .WithPortBinding(1433)
                                                              .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(1433))
-                                                             .WithNetwork(_weatherForecastNetwork)
-                                                             .WithNetworkAliases(networkAliase)
                                                              .Build();
-
-        private readonly ElasticsearchContainer _elasticsearchcontainer = new ElasticsearchBuilder()
-                                                                             .WithCleanUp(true)
-                                                                             .WithPortBinding(9200)
-                                                                             .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(9200))
-                                                                             .WithNetwork(_weatherForecastNetwork)
-                                                                             .WithNetworkAliases(networkAliase)
-                                                                             .Build();
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
             builder.ConfigureTestServices(services =>
@@ -53,14 +38,12 @@ namespace ApiTemplate.Presentation.Web.Tests.Integration
 
         public async Task InitializeAsync()
         {
-            await _weatherForecastNetwork.CreateAsync();
             await _mssqlContainer.StartAsync();
         }
 
         public new async Task DisposeAsync()
         {
             await _mssqlContainer.StopAsync();
-            await _weatherForecastNetwork.DisposeAsync();
         }
     }
 

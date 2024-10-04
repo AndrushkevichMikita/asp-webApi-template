@@ -12,9 +12,6 @@ jobs:
       - name: Set up Docker
         run: docker --version
 
-      - name: Clean up Docker (if any previous containers are running)
-        run: docker system prune -af
-
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
