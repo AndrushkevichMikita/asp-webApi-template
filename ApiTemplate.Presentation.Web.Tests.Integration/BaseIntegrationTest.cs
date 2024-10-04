@@ -4,7 +4,6 @@ using DotNet.Testcontainers.Networks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Testcontainers.Elasticsearch;
@@ -48,46 +47,22 @@ namespace ApiTemplate.Presentation.Web.Tests.Integration
                 });
             });
 
-            Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
-            builder.UseEnvironment("Development");
+            Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "IntegrationTests");
+            builder.UseEnvironment("IntegrationTests");
         }
 
         public async Task InitializeAsync()
         {
             await _weatherForecastNetwork.CreateAsync();
             await _mssqlContainer.StartAsync();
-            await _elasticsearchcontainer.StartAsync();
         }
 
         public new async Task DisposeAsync()
         {
             await _mssqlContainer.StopAsync();
-            await _elasticsearchcontainer.StopAsync();
             await _weatherForecastNetwork.DisposeAsync();
         }
-
-        public static async Task WaitUntilContainerIsReadyAsync(MsSqlContainer container, int retries = 10, int delay = 2000)
-        {
-            using var httpClient = new HttpClient();
-            for (int i = 0; i < retries; i++)
-            {
-                try
-                {
-                    // Example of checking if the database is ready by trying to open a connection
-                    using var connection = new SqlConnection(container.GetConnectionString());
-                    await connection.OpenAsync();
-                    return;
-                }
-                catch
-                {
-                    await Task.Delay(delay);
-                }
-            }
-
-            throw new Exception("The SQL Server container is not ready.");
-        }
     }
-
 
     /// <summary>
     /// Note: <see cref="TestsWebApplicationFactory" /> class are tied to IAsyncLifetime, <br/>
